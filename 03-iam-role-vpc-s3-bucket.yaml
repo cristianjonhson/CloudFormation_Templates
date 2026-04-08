@@ -1,5 +1,24 @@
+# =============================================================
+# Template: 03-iam-role-vpc-s3-bucket.yaml
+# Descripcion: Crea un rol IAM para EC2, una VPC y un bucket S3
+#   con politica de lectura publica. Demuestra como combinar
+#   servicios de identidad, red y almacenamiento.
+# Recursos creados:
+#   - IAM Role (para que EC2 acceda a S3)
+#   - VPC con soporte DNS
+#   - S3 Bucket con acceso publico
+#   - S3 Bucket Policy (GetObject publico)
+# ADVERTENCIA: El bucket es publico. No usar en produccion
+#   con datos sensibles.
+# =============================================================
 AWSTemplateFormatVersion: '2010-09-09'
 Resources:
+
+  # Rol IAM que permite a instancias EC2 asumir permisos de S3.
+  # AssumeRolePolicyDocument: define quien puede asumir el rol
+  #   (en este caso, el servicio ec2.amazonaws.com).
+  # ManagedPolicyArns: adjunta la politica gestionada de AWS
+  #   AmazonS3FullAccess que da acceso total a S3.
   MyIAMRole:
     Type: AWS::IAM::Role
     Properties:
@@ -9,11 +28,14 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: ec2.amazonaws.com
+              Service: ec2.amazonaws.com  # Solo EC2 puede asumir este rol
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess  # Acceso total a S3
 
+  # VPC: red virtual privada que aisla los recursos de AWS.
+  # CidrBlock 10.0.0.0/16 proporciona hasta 65.536 IPs privadas.
+  # EnableDnsSupport/Hostnames: permite resolver nombres DNS dentro de la VPC.
   MyVPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -21,17 +43,23 @@ Resources:
       EnableDnsSupport: true
       EnableDnsHostnames: true
 
+  # Bucket S3 con acceso publico de lectura y escritura.
+  # NOTA: Los nombres de bucket S3 son globales en AWS;
+  #   deben ser unicos en todas las cuentas y regiones.
   MyS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: mys3-bucket2023
       AccessControl: PublicReadWrite
-      
 
+  # Politica del bucket: permite a cualquier usuario de Internet
+  # hacer s3:GetObject sobre todos los objetos del bucket (/*).
+  # Fn::Join construye el ARN del bucket concatenando strings:
+  #   arn:aws:s3:::<nombre-del-bucket>/*
   MyS3BucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
-      Bucket: 
+      Bucket:
         Ref: MyS3Bucket
       PolicyDocument:
         Version: '2012-10-17'
@@ -39,16 +67,14 @@ Resources:
           - Sid: PublicReadGetObject
             Effect: Allow
             Principal:  {
-                "AWS": "*"
+                "AWS": "*"  # Cualquier identidad (publico)
             }
             Action:
-              - s3:GetObject
-            Resource: 
-              Fn::Join: 
+              - s3:GetObject  # Solo lectura de objetos
+            Resource:
+              Fn::Join:
                 - ''
                 - - 'arn:aws:s3:::'
-                  - 
+                  -
                     Ref: MyS3Bucket
-                  - '/*'
-
-
+                  - '/*'  # Aplica a todos los objetos del bucket
