@@ -1,0 +1,28 @@
+Resources:
+  AdminGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: AdminGroup
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  AdminUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: AdminUser
+
+  AdminUserGroupMembership:
+    Type: AWS::IAM::UserToGroupAddition
+    Properties:
+      GroupName: AdminGroup
+      Users:
+        - Ref: AdminUser
+        
+  S3Bucket:
+    Type: AWS::S3::Bucket
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+
