@@ -1,30 +1,61 @@
+# =============================================================
+# Template: 04-iam-user-group-vpc-internet-gateway.yaml
+# Descripcion: Infraestructura completa con gestion de identidad
+#   (IAM User y Group), almacenamiento privado (S3), red (VPC)
+#   y conectividad a Internet (Internet Gateway).
+# Recursos creados:
+#   - IAM User
+#   - IAM Group
+#   - S3 Bucket (privado)
+#   - VPC
+#   - Internet Gateway
+# Outputs: IDs de todos los recursos para referencia cruzada.
+# =============================================================
 Resources:
+
+  # Usuario IAM individual. En AWS, los usuarios representan
+  # personas o aplicaciones que interactuan con los servicios.
   MyUser:
     Type: AWS::IAM::User
     Properties:
       UserName: my-user
 
+  # Grupo IAM para organizar usuarios y asignarles permisos
+  # de forma centralizada. Es una buena practica gestionar
+  # politicas a nivel de grupo, no de usuario individual.
   MyGroup:
     Type: AWS::IAM::Group
     Properties:
       GroupName: my-group
 
+  # Bucket S3 privado: AccessControl: Private significa que
+  # solo el propietario tiene acceso. Ideal para datos internos.
   MyBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: my-unique-bucket
       AccessControl: Private
 
+  # VPC: red virtual privada e isolada para los recursos.
+  # El rango 10.0.0.0/16 es un bloque CIDR privado estandar
+  # que permite crear subredes publicas y privadas dentro.
   MyVPC:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.0.0.0/16
-      EnableDnsSupport: true
-      EnableDnsHostnames: true
+      EnableDnsSupport: true     # Habilita resolucion DNS interna
+      EnableDnsHostnames: true   # Asigna hostnames DNS a instancias
 
+  # Internet Gateway: componente que conecta la VPC a Internet.
+  # Sin este recurso, los recursos dentro de la VPC no pueden
+  # comunicarse con el exterior (ni recibir trafico entrante).
+  # Paso siguiente seria adjuntarlo a la VPC con VPCGatewayAttachment.
   MyInternetGateway:
     Type: AWS::EC2::InternetGateway
 
+# Outputs: exponen los IDs de los recursos creados.
+# Util para consultarlos via CLI o referenciarlos en otros stacks
+# usando Fn::ImportValue (cross-stack references).
 Outputs:
   MyUserOutput:
     Value: !Ref MyUser
