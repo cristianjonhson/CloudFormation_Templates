@@ -1,28 +1,56 @@
+# =============================================================
+# Template: 05-iam-admin-group-user-vpc-s3.yaml
+# Descripcion: Configura un usuario administrador de AWS mediante
+#   un grupo IAM con politica AdministratorAccess, lo agrega al
+#   grupo, y provisiona un bucket S3 y una VPC base.
+# Recursos creados:
+#   - IAM Group con AdministratorAccess
+#   - IAM User (AdminUser)
+#   - Membresia usuario -> grupo (UserToGroupAddition)
+#   - S3 Bucket
+#   - VPC
+# ADVERTENCIA: AdministratorAccess otorga permisos totales en la
+#   cuenta. Usar con precaucion y solo en entornos controlados.
+# =============================================================
 Resources:
+
+  # Grupo IAM con la politica gestionada AdministratorAccess.
+  # Todo usuario en este grupo tendra acceso total a todos los
+  # servicios y recursos de la cuenta AWS.
   AdminGroup:
     Type: AWS::IAM::Group
     Properties:
       GroupName: AdminGroup
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess
+        - arn:aws:iam::aws:policy/AdministratorAccess  # Acceso total a AWS
 
+  # Usuario IAM que sera miembro del grupo de administradores.
+  # Los permisos se heredan del grupo, no se asignan directamente.
   AdminUser:
     Type: AWS::IAM::User
     Properties:
       UserName: AdminUser
 
+  # UserToGroupAddition: agrega uno o mas usuarios a un grupo IAM.
+  # Este recurso es la forma declarativa de asignar membresia;
+  # equivale a: aws iam add-user-to-group.
   AdminUserGroupMembership:
     Type: AWS::IAM::UserToGroupAddition
     Properties:
-      GroupName: AdminGroup
+      GroupName: AdminGroup  # Nombre del grupo destino
       Users:
-        - Ref: AdminUser
-        
+        - Ref: AdminUser     # Referencia al usuario creado arriba
+
+  # Bucket S3 sin propiedades adicionales: CloudFormation generara
+  # un nombre unico automaticamente. Sin AccessControl explicitico,
+  # el bucket es privado por defecto.
   S3Bucket:
     Type: AWS::S3::Bucket
 
+  # VPC base con rango de IPs privadas 10.0.0.0/16.
+  # Es el contenedor de red sobre el que se construiria
+  # la infraestructura de subredes, rutas y gateways.
   VPC:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.0.0.0/16
-
