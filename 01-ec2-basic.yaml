@@ -1,5 +1,17 @@
+# =============================================================
+# Template: 01-ec2-basic.yaml
+# Descripcion: Template minimo que lanza una unica instancia EC2.
+#   Es el punto de partida para aprender CloudFormation.
+# Recursos creados:
+#   - EC2 Instance (t2.micro)
+# =============================================================
 ---
 Resources:
+
+  # Instancia EC2 basica sin red personalizada ni seguridad adicional.
+  # AvailabilityZone: zona de disponibilidad donde se lanzara la instancia.
+  # ImageId: AMI de Amazon Linux en us-east-1 (cambiar si se usa otra region).
+  # InstanceType: t2.micro es elegible para la capa gratuita de AWS.
   MyInstance:
     Type: AWS::EC2::Instance
     Properties:
