@@ -1,0 +1,47 @@
+Resources:
+  MyUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: my-user
+
+  MyGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: my-group
+
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: my-unique-bucket
+      AccessControl: Private
+
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+Outputs:
+  MyUserOutput:
+    Value: !Ref MyUser
+    Description: IAM User
+
+  MyGroupOutput:
+    Value: !Ref MyGroup
+    Description: IAM Group
+
+  MyBucketOutput:
+    Value: !Ref MyBucket
+    Description: S3 Bucket
+
+  MyVPCOutput:
+    Value: !Ref MyVPC
+    Description: VPC
+
+  MyInternetGatewayOutput:
+    Value: !Ref MyInternetGateway
+    Description: Internet Gateway
