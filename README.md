@@ -98,7 +98,7 @@ aws configure
 # Default output format: json
 ```
 
-Para templates con **parámetros** (ej. `1-ec2-with-sg-eip.yaml`), puedes pasarlos en línea o mediante un archivo JSON de parámetros.
+Para templates con **parámetros** (ej. `02-ec2-security-group-elastic-ip.yaml`), puedes pasarlos en línea o mediante un archivo JSON de parámetros.
 
 ---
 
