@@ -1,27 +1,50 @@
+# =============================================================
+# Template: 02-ec2-security-group-elastic-ip.yaml
+# Descripcion: Lanza una instancia EC2 con dos Security Groups
+#   y una Elastic IP (EIP) para mantener una IP publica fija.
+# Parametros requeridos:
+#   - SecurityGroupDescription: descripcion del grupo de servidor.
+# Recursos creados:
+#   - EC2 Instance
+#   - Elastic IP (asociada a la instancia)
+#   - Security Group SSH (puerto 22 abierto al mundo)
+#   - Security Group Servidor (puertos 80 y 22 con restricciones)
+# Outputs:
+#   - ElasticIP: la IP publica fija asignada a la instancia
+# =============================================================
 ---
+
+# Parametros permiten personalizar el template en cada despliegue
+# sin modificar el codigo fuente directamente.
 Parameters:
   SecurityGroupDescription:
     Description: Descripcion del grupo de seguridad
     Type: String
 
 Resources:
+
+  # Instancia EC2 que referencia ambos Security Groups.
+  # !Ref resuelve el nombre logico del recurso al ID real en AWS.
   MyInstance:
     Type: AWS::EC2::Instance
     Properties:
       AvailabilityZone: us-east-1a
-      ImageId: ami-a4c7edb2
+      ImageId: ami-a4c7edb2  # AMI de Amazon Linux (us-east-1)
       InstanceType: t2.micro
       SecurityGroups:
-        - !Ref SSHSecurityGroup
-        - !Ref ServerSecurityGroup
+        - !Ref SSHSecurityGroup    # Permite SSH desde cualquier IP
+        - !Ref ServerSecurityGroup # Permite HTTP y SSH restringido
 
-  # una IP elastica para nuestra instancia
+  # Elastic IP: IP publica estatica que no cambia al reiniciar la instancia.
+  # Sin EIP, la IP publica de EC2 cambia cada vez que se para y se inicia.
   MyEIP:
     Type: AWS::EC2::EIP
     Properties:
       InstanceId: !Ref MyInstance
 
-  # nuestro grupo de seguridad EC2
+  # Security Group de SSH: permite acceso por SSH (puerto 22) desde Internet.
+  # NOTA: CidrIp 0.0.0.0/0 significa acceso desde cualquier IP.
+  #       En produccion se recomienda restringir a IPs de confianza.
   SSHSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -32,7 +55,10 @@ Resources:
         IpProtocol: tcp
         ToPort: 22
 
-  # nuestro segundo grupo de seguridad EC2
+  # Security Group del servidor web:
+  #   - Puerto 80 (HTTP) abierto al mundo para servir trafico web.
+  #   - Puerto 22 (SSH) restringido a la IP 192.168.1.1 (red interna).
+  # GroupDescription se toma del parametro SecurityGroupDescription.
   ServerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -41,12 +67,14 @@ Resources:
       - IpProtocol: tcp
         FromPort: 80
         ToPort: 80
-        CidrIp: 0.0.0.0/0
+        CidrIp: 0.0.0.0/0       # HTTP publico
       - IpProtocol: tcp
         FromPort: 22
         ToPort: 22
-        CidrIp: 192.168.1.1/32
+        CidrIp: 192.168.1.1/32  # SSH solo desde red interna
 
+# Outputs exponen valores del stack para consultarlos luego
+# via consola, CLI o para pasarlos a otros stacks.
 Outputs:
   ElasticIP:
     Description: Valor de la IP elastica
