@@ -158,9 +158,9 @@ aws cloudformation validate-template \
 
 ## ⚠️ Consideraciones Importantes
 
-- Algunos templates (ej. `template-IAM-VPC-S3.yaml`) crean buckets S3 con acceso **público**. Revisar las políticas según el entorno antes de desplegar en producción.
+- Algunos templates (ej. `03-iam-role-vpc-s3-bucket.yaml`) crean buckets S3 con acceso **público**. Revisar las políticas según el entorno antes de desplegar en producción.
 - El flag `--capabilities CAPABILITY_NAMED_IAM` es obligatorio en templates que crean recursos IAM con nombres explícitos.
-- Las AMIs (`ami-a4c7edb2`) son específicas de la región `us-east-1`. Cambiarlas si se despliega en otra región.
+- Las AMIs ahora se toman desde **SSM Parameter Store** para evitar IDs obsoletos y facilitar despliegues entre regiones.
 - Los templates con `BucketName` fijo pueden fallar si el nombre ya existe en otra cuenta AWS (los nombres de S3 son globales).
 
 ---
