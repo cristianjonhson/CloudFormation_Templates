@@ -17,6 +17,11 @@
 # Parametros permiten personalizar el template en cada despliegue
 # sin modificar el codigo fuente directamente.
 Parameters:
+  LatestAmiId:
+    Description: AMI dinamica de Amazon Linux via SSM Parameter Store
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
   SecurityGroupDescription:
     Description: Descripcion del grupo de seguridad
     Type: String
@@ -29,7 +34,7 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       AvailabilityZone: us-east-1a
-      ImageId: ami-a4c7edb2  # AMI de Amazon Linux (us-east-1)
+      ImageId: !Ref LatestAmiId # AMI dinamica obtenida del parametro SSM
       InstanceType: t2.micro
       SecurityGroups:
         - !Ref SSHSecurityGroup    # Permite SSH desde cualquier IP
@@ -40,7 +45,7 @@ Resources:
   MyEIP:
     Type: AWS::EC2::EIP
     Properties:
-      InstanceId: !Ref MyInstance
+      InstanceId: !Ref MyInstance # Asocia la EIP a la instancia EC2 creada arriba
 
   # Security Group de SSH: permite acceso por SSH (puerto 22) desde Internet.
   # NOTA: CidrIp 0.0.0.0/0 significa acceso desde cualquier IP.
@@ -62,7 +67,7 @@ Resources:
   ServerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: !Ref SecurityGroupDescription
+      GroupDescription: !Ref SecurityGroupDescription # Descripcion personalizada via parametro
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 80
@@ -78,4 +83,4 @@ Resources:
 Outputs:
   ElasticIP:
     Description: Valor de la IP elastica
-    Value: !Ref MyEIP
+    Value: !Ref MyEIP # Ref al recurso EIP devuelve la IP publica asignada a la instancia
