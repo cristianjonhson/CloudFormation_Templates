@@ -4,25 +4,48 @@
 #   un grupo IAM con politica AdministratorAccess, lo agrega al
 #   grupo, y provisiona un bucket S3 y una VPC base.
 # Recursos creados:
-#   - IAM Group con AdministratorAccess
+#   - IAM Group con permisos minimos para laboratorio
 #   - IAM User (AdminUser)
 #   - Membresia usuario -> grupo (UserToGroupAddition)
 #   - S3 Bucket
 #   - VPC
-# ADVERTENCIA: AdministratorAccess otorga permisos totales en la
-#   cuenta. Usar con precaucion y solo en entornos controlados.
 # =============================================================
 Resources:
 
-  # Grupo IAM con la politica gestionada AdministratorAccess.
-  # Todo usuario en este grupo tendra acceso total a todos los
-  # servicios y recursos de la cuenta AWS.
+  # Grupo IAM con politica minima para pruebas de S3 y lectura EC2.
+  # Se evita AdministratorAccess para reducir riesgo de privilegios.
   AdminGroup:
     Type: AWS::IAM::Group
     Properties:
       GroupName: AdminGroup
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess  # Acceso total a AWS
+      Policies:
+        - PolicyName: LimitedLabAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: S3ListBuckets
+                Effect: Allow
+                Action:
+                  - s3:ListAllMyBuckets
+                Resource: '*'
+              - Sid: S3BucketScopedAccess
+                Effect: Allow
+                Action:
+                  - s3:ListBucket
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource:
+                  - !Sub arn:aws:s3:::${S3Bucket}
+                  - !Sub arn:aws:s3:::${S3Bucket}/*
+              - Sid: Ec2ReadOnly
+                Effect: Allow
+                Action:
+                  - ec2:DescribeVpcs
+                  - ec2:DescribeSubnets
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeInstances
+                Resource: '*'
 
   # Usuario IAM que sera miembro del grupo de administradores.
   # Los permisos se heredan del grupo, no se asignan directamente.
