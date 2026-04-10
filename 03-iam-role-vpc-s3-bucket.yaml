@@ -6,10 +6,7 @@
 # Recursos creados:
 #   - IAM Role (para que EC2 acceda a S3)
 #   - VPC con soporte DNS
-#   - S3 Bucket con acceso publico
-#   - S3 Bucket Policy (GetObject publico)
-# ADVERTENCIA: El bucket es publico. No usar en produccion
-#   con datos sensibles.
+#   - S3 Bucket privado
 # =============================================================
 AWSTemplateFormatVersion: '2010-09-09'
 Resources:
@@ -22,7 +19,6 @@ Resources:
   MyIAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: Cris
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -43,38 +39,8 @@ Resources:
       EnableDnsSupport: true
       EnableDnsHostnames: true
 
-  # Bucket S3 con acceso publico de lectura y escritura.
-  # NOTA: Los nombres de bucket S3 son globales en AWS;
-  #   deben ser unicos en todas las cuentas y regiones.
+  # Bucket S3 privado para evitar exposicion publica no intencional.
   MyS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: mys3-bucket2023
-      AccessControl: PublicReadWrite
-
-  # Politica del bucket: permite a cualquier usuario de Internet
-  # hacer s3:GetObject sobre todos los objetos del bucket (/*).
-  # Fn::Join construye el ARN del bucket concatenando strings:
-  #   arn:aws:s3:::<nombre-del-bucket>/*
-  MyS3BucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket:
-        Ref: MyS3Bucket
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: PublicReadGetObject
-            Effect: Allow
-            Principal:  {
-                "AWS": "*"  # Cualquier identidad (publico)
-            }
-            Action:
-              - s3:GetObject  # Solo lectura de objetos
-            Resource:
-              Fn::Join:
-                - ''
-                - - 'arn:aws:s3:::'
-                  -
-                    Ref: MyS3Bucket
-                  - '/*'  # Aplica a todos los objetos del bucket
+      AccessControl: Private
