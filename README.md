@@ -144,6 +144,18 @@ aws cloudformation create-stack \
   --template-body file://03-iam-role-vpc-s3-bucket.yaml \
   --parameters ParameterKey=RoleName,ParameterValue="Cris" ParameterKey=BucketName,ParameterValue="mys3-bucket2023" \
   --capabilities CAPABILITY_NAMED_IAM
+
+# Ejemplo template 04: IAM User + IAM Group + S3 + VPC + Internet Gateway
+aws cloudformation create-stack \
+  --stack-name iam-user-group-vpc-igw-test \
+  --template-body file://04-iam-user-group-vpc-internet-gateway.yaml \
+  --capabilities CAPABILITY_NAMED_IAM
+
+# Ejemplo template 05: IAM Group con permisos de laboratorio + User + S3 + VPC
+aws cloudformation create-stack \
+  --stack-name iam-lab-user-vpc-s3-test \
+  --template-body file://05-iam-admin-group-user-vpc-s3.yaml \
+  --capabilities CAPABILITY_NAMED_IAM
 ```
 
 ### Opción 2 — Consola de AWS
