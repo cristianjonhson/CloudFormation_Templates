@@ -47,19 +47,19 @@ Plantilla mínima. Lanza una instancia EC2 `t2.micro` en `us-east-1a`.
 ### `02-ec2-security-group-elastic-ip.yaml`
 EC2 con dos Security Groups y una Elastic IP asociada. El `SecurityGroupDescription` se recibe como parámetro.
 - **Recursos:** `EC2::Instance`, `EC2::EIP`, `EC2::SecurityGroup` (x2)
-- **Parámetros:** `SecurityGroupDescription`
+- **Parámetros:** `SecurityGroupDescription`, `AdminCidr`
 - **Outputs:** IP elástica asignada
 
 ### `03-iam-role-vpc-s3-bucket.yaml`
-Crea un rol IAM para EC2 con acceso completo a S3, una VPC y un bucket S3 con política de lectura pública.
-- **Recursos:** `IAM::Role`, `EC2::VPC`, `S3::Bucket`, `S3::BucketPolicy`
+Crea un rol IAM para EC2 con acceso completo a S3, una VPC y un bucket S3 privado.
+- **Recursos:** `IAM::Role`, `EC2::VPC`, `S3::Bucket`
 
 ### `04-iam-user-group-vpc-internet-gateway.yaml`
 Infraestructura completa con usuario y grupo IAM, bucket S3 privado, VPC e Internet Gateway. Incluye Outputs para todos los recursos.
 - **Recursos:** `IAM::User`, `IAM::Group`, `S3::Bucket`, `EC2::VPC`, `EC2::InternetGateway`
 
 ### `05-iam-admin-group-user-vpc-s3.yaml`
-Grupo IAM con política de administrador, usuario admin, membresía al grupo, bucket S3 y VPC.
+Grupo IAM con política mínima de laboratorio, usuario admin, membresía al grupo, bucket S3 y VPC.
 - **Recursos:** `IAM::Group`, `IAM::User`, `IAM::UserToGroupAddition`, `S3::Bucket`, `EC2::VPC`
 
 ---
@@ -158,9 +158,9 @@ aws cloudformation validate-template \
 
 ## ⚠️ Consideraciones Importantes
 
-- Algunos templates (ej. `03-iam-role-vpc-s3-bucket.yaml`) crean buckets S3 con acceso **público**. Revisar las políticas según el entorno antes de desplegar en producción.
+- El template `02-ec2-security-group-elastic-ip.yaml` ahora restringe SSH por parámetro `AdminCidr`; usa tu IP pública con máscara `/32`.
 - El flag `--capabilities CAPABILITY_NAMED_IAM` es obligatorio en templates que crean recursos IAM con nombres explícitos.
-- Las AMIs ahora se toman desde **SSM Parameter Store** para evitar IDs obsoletos y facilitar despliegues entre regiones.
+- El template `01-ec2-basic.yaml` usa por defecto `ami-a4c7edb2`, y permite sobreescribir `AmiId` para otras regiones o AMIs equivalentes.
 - Los templates con `BucketName` fijo pueden fallar si el nombre ya existe en otra cuenta AWS (los nombres de S3 son globales).
 
 ---
