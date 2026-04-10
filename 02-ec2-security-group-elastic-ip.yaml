@@ -3,6 +3,8 @@
 # Descripcion: Lanza una instancia EC2 con dos Security Groups
 #   y una Elastic IP (EIP) para mantener una IP publica fija.
 # Parametros requeridos:
+#   - VpcId: VPC donde se desplegara la instancia.
+#   - SubnetId: subnet donde se lanzara la instancia.
 #   - SecurityGroupDescription: descripcion del grupo de servidor.
 # Recursos creados:
 #   - EC2 Instance
@@ -19,6 +21,14 @@
 
 # LatestAmiId: obtiene dinamicamente la AMI de Amazon Linux mas reciente usando un parametro de tipo AWS::SSM::Parameter::Value que referencia un parametro de SSM Parameter Store. Esto evita hardcodear IDs de AMI que pueden quedar obsoletos o no existir en otras regiones.
 Parameters:
+  VpcId:
+    Description: ID de la VPC donde se desplegara la instancia y los security groups
+    Type: AWS::EC2::VPC::Id
+
+  SubnetId:
+    Description: ID de la subnet donde se lanzara la instancia EC2
+    Type: AWS::EC2::Subnet::Id
+
   LatestAmiId:
     Description: AMI dinamica de Amazon Linux via SSM Parameter Store
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
@@ -41,10 +51,10 @@ Resources:
   MyInstance:
     Type: AWS::EC2::Instance
     Properties:
-      AvailabilityZone: us-east-1a
+      SubnetId: !Ref SubnetId
       ImageId: !Ref LatestAmiId # AMI dinamica obtenida del parametro SSM
       InstanceType: t2.micro
-      SecurityGroups:
+      SecurityGroupIds:
         - !Ref SSHSecurityGroup    # Permite SSH desde cualquier IP
         - !Ref ServerSecurityGroup # Permite HTTP y SSH restringido
 
@@ -53,13 +63,21 @@ Resources:
   MyEIP:
     Type: AWS::EC2::EIP
     Properties:
-      InstanceId: !Ref MyInstance # Asocia la EIP a la instancia EC2 creada arriba
+      Domain: vpc
+
+  # Asociacion explicita de la Elastic IP a la instancia dentro de la VPC.
+  MyEIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt MyEIP.AllocationId
+      InstanceId: !Ref MyInstance
 
   # Security Group de SSH: permite acceso por SSH (puerto 22) desde Internet.
   # El acceso queda restringido al CIDR definido por parametro.
   SSHSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
+      VpcId: !Ref VpcId
       GroupDescription: Habilita el acceso SSH a traves del puerto 22
       SecurityGroupIngress:
       - CidrIp: !Ref AdminCidr # CIDR autorizado para acceso SSH administrativo
@@ -74,6 +92,7 @@ Resources:
   ServerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
+      VpcId: !Ref VpcId
       GroupDescription: !Ref SecurityGroupDescription # Descripcion personalizada via parametro
       SecurityGroupIngress:
       - IpProtocol: tcp
