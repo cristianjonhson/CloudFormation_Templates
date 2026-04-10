@@ -53,6 +53,7 @@ EC2 con dos Security Groups y una Elastic IP asociada. El `SecurityGroupDescript
 ### `03-iam-role-vpc-s3-bucket.yaml`
 Crea un rol IAM para EC2 con acceso completo a S3, una VPC y un bucket S3 privado.
 - **Recursos:** `IAM::Role`, `EC2::VPC`, `S3::Bucket`
+- **Parámetros:** `RoleName`, `BucketName` (opcionales)
 
 ### `04-iam-user-group-vpc-internet-gateway.yaml`
 Infraestructura completa con usuario y grupo IAM, bucket S3 privado, VPC e Internet Gateway. Incluye Outputs para todos los recursos.
@@ -98,7 +99,7 @@ aws configure
 # Default output format: json
 ```
 
-Para templates con **parámetros** (ej. `02-ec2-security-group-elastic-ip.yaml`), puedes pasarlos en línea o mediante un archivo JSON de parámetros.
+Para templates con **parámetros** (ej. `02-ec2-security-group-elastic-ip.yaml` o `03-iam-role-vpc-s3-bucket.yaml`), puedes pasarlos en línea o mediante un archivo JSON de parámetros.
 
 ---
 
@@ -118,6 +119,13 @@ aws cloudformation create-stack \
   --stack-name ec2-sg-eip-stack \
   --template-body file://02-ec2-security-group-elastic-ip.yaml \
   --parameters ParameterKey=SecurityGroupDescription,ParameterValue="Mi grupo de seguridad" \
+  --capabilities CAPABILITY_NAMED_IAM
+
+# Ejemplo con nombres opcionales para rol y bucket
+aws cloudformation create-stack \
+  --stack-name iam-vpc-s3-stack \
+  --template-body file://03-iam-role-vpc-s3-bucket.yaml \
+  --parameters ParameterKey=RoleName,ParameterValue="Cris" ParameterKey=BucketName,ParameterValue="mys3-bucket2023" \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
@@ -159,9 +167,9 @@ aws cloudformation validate-template \
 ## ⚠️ Consideraciones Importantes
 
 - El template `02-ec2-security-group-elastic-ip.yaml` ahora restringe SSH por parámetro `AdminCidr`; usa tu IP pública con máscara `/32`.
-- El flag `--capabilities CAPABILITY_NAMED_IAM` es obligatorio en templates que crean recursos IAM con nombres explícitos.
+- El flag `--capabilities CAPABILITY_NAMED_IAM` es obligatorio cuando asignas nombres explícitos a recursos IAM, por ejemplo usando `RoleName` en `03-iam-role-vpc-s3-bucket.yaml`.
 - El template `01-ec2-basic.yaml` usa por defecto `ami-a4c7edb2`, y permite sobreescribir `AmiId` para otras regiones o AMIs equivalentes.
-- Los templates con `BucketName` fijo pueden fallar si el nombre ya existe en otra cuenta AWS (los nombres de S3 son globales).
+- `BucketName` en S3 es opcional; si lo defines, debe ser globalmente único en AWS.
 
 ---
 
