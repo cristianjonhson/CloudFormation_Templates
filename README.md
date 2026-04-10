@@ -49,7 +49,7 @@ Plantilla mínima. Lanza una instancia EC2 `t2.micro` en `us-east-1a`.
 ### `02-ec2-security-group-elastic-ip.yaml`
 EC2 con dos Security Groups y una Elastic IP asociada. El `SecurityGroupDescription` se recibe como parámetro.
 - **Recursos:** `EC2::Instance`, `EC2::EIP`, `EC2::SecurityGroup` (x2)
-- **Parámetros:** `SecurityGroupDescription`, `AdminCidr`
+- **Parámetros:** `VpcId`, `SubnetId`, `SecurityGroupDescription`, `AdminCidr`
 - **Outputs:** IP elástica asignada
 
 ### `03-iam-role-vpc-s3-bucket.yaml`
@@ -127,10 +127,13 @@ aws cloudformation create-stack \
   --stack-name ec2-sg-eip-stack \
   --template-body file://02-ec2-security-group-elastic-ip.yaml \
   --parameters \
+    ParameterKey=VpcId,ParameterValue="vpc-xxxxxxxx" \
+    ParameterKey=SubnetId,ParameterValue="subnet-xxxxxxxx" \
     ParameterKey=SecurityGroupDescription,ParameterValue="Mi grupo de seguridad" \
     ParameterKey=AdminCidr,ParameterValue="203.0.113.10/32"
 
-# Reemplaza 203.0.113.10/32 por tu IP pública real con máscara /32.
+# Reemplaza `vpc-xxxxxxxx` y `subnet-xxxxxxxx` por una VPC y subnet reales de tu cuenta.
+# Reemplaza `203.0.113.10/32` por tu IP pública real con máscara /32.
 
 # Ejemplo template 03 por defecto (AWS genera `RoleName` y `BucketName`)
 aws cloudformation create-stack \
@@ -214,6 +217,7 @@ Esta validación local comprueba sintaxis YAML y compatibilidad con las etiqueta
 ## ⚠️ Consideraciones Importantes
 
 - El template `02-ec2-security-group-elastic-ip.yaml` ahora restringe SSH por parámetro `AdminCidr`; usa tu IP pública con máscara `/32`.
+- El template `02-ec2-security-group-elastic-ip.yaml` requiere `VpcId` y `SubnetId` si tu cuenta no tiene VPC por defecto.
 - El flag `--capabilities CAPABILITY_NAMED_IAM` es obligatorio en los templates que crean recursos IAM, y sigue siendo especialmente relevante si asignas nombres explícitos como `RoleName` en `03-iam-role-vpc-s3-bucket.yaml`.
 - El template `01-ec2-basic.yaml` usa por defecto `ami-a4c7edb2`, y permite sobreescribir `AmiId` para otras regiones o AMIs equivalentes.
 - `BucketName` en S3 es opcional; si lo defines, debe ser globalmente único en AWS.
