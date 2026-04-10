@@ -117,20 +117,26 @@ aws cloudformation create-stack \
   --template-body file://<nombre-del-archivo>.yaml \
   --capabilities CAPABILITY_NAMED_IAM
 
-# Ejemplo con parámetros
+# Ejemplo template 01: EC2 basica
+aws cloudformation create-stack \
+  --stack-name ec2-basic-test \
+  --template-body file://01-ec2-basic.yaml
+
+# Ejemplo template 02: EC2 + Security Groups + Elastic IP
 aws cloudformation create-stack \
   --stack-name ec2-sg-eip-stack \
   --template-body file://02-ec2-security-group-elastic-ip.yaml \
-  --parameters ParameterKey=SecurityGroupDescription,ParameterValue="Mi grupo de seguridad" \
-  --capabilities CAPABILITY_NAMED_IAM
+  --parameters \
+    ParameterKey=SecurityGroupDescription,ParameterValue="Mi grupo de seguridad" \
+    ParameterKey=AdminCidr,ParameterValue="203.0.113.10/32"
 
-# Ejemplo por defecto en template 03 (AWS genera RoleName y BucketName)
+# Ejemplo template 03 por defecto (AWS genera RoleName y BucketName)
 aws cloudformation create-stack \
   --stack-name iam-vpc-s3-stack \
   --template-body file://03-iam-role-vpc-s3-bucket.yaml \
   --capabilities CAPABILITY_NAMED_IAM
 
-# Ejemplo con nombres personalizados para rol y bucket
+# Ejemplo template 03 con nombres personalizados para rol y bucket
 aws cloudformation create-stack \
   --stack-name iam-vpc-s3-custom-stack \
   --template-body file://03-iam-role-vpc-s3-bucket.yaml \
