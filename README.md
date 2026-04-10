@@ -54,6 +54,7 @@ EC2 con dos Security Groups y una Elastic IP asociada. El `SecurityGroupDescript
 Crea un rol IAM para EC2 con acceso completo a S3, una VPC y un bucket S3 privado.
 - **Recursos:** `IAM::Role`, `EC2::VPC`, `S3::Bucket`
 - **Parámetros:** `RoleName`, `BucketName` (opcionales)
+- **Nota:** si no se envían estos parámetros, CloudFormation genera los nombres automáticamente.
 
 ### `04-iam-user-group-vpc-internet-gateway.yaml`
 Infraestructura completa con usuario y grupo IAM, bucket S3 privado, VPC e Internet Gateway. Incluye Outputs para todos los recursos.
