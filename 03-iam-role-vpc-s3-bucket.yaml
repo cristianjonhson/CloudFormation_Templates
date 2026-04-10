@@ -9,6 +9,27 @@
 #   - S3 Bucket privado
 # =============================================================
 AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+
+  # Nombre opcional para el rol IAM.
+  # Si se deja vacio, CloudFormation genera un nombre unico.
+  RoleName:
+    Type: String
+    Default: ''
+    Description: Nombre opcional para el rol IAM
+
+  # Nombre opcional para el bucket S3.
+  # Si se deja vacio, CloudFormation genera un nombre unico.
+  BucketName:
+    Type: String
+    Default: ''
+    Description: Nombre opcional para el bucket S3
+
+Conditions:
+  UseCustomRoleName: !Not [!Equals [!Ref RoleName, '']]
+  UseCustomBucketName: !Not [!Equals [!Ref BucketName, '']]
+
 Resources:
 
   # Rol IAM que permite a instancias EC2 asumir permisos de S3.
@@ -16,9 +37,12 @@ Resources:
   #   (en este caso, el servicio ec2.amazonaws.com).
   # ManagedPolicyArns: adjunta la politica gestionada de AWS
   #   AmazonS3FullAccess que da acceso total a S3.
+  # RoleName: se asigna solo si el parametro no esta vacio, sino se omite para que CloudFormation genere un nombre unico.
+  # Es buena practica no hardcodear nombres de recursos a menos que sea necesario, para evitar conflictos y facilitar despliegues repetidos.
   MyIAMRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: !If [UseCustomRoleName, !Ref RoleName, !Ref 'AWS::NoValue']
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -40,7 +64,10 @@ Resources:
       EnableDnsHostnames: true
 
   # Bucket S3 privado para evitar exposicion publica no intencional.
+  # AccessControl: Private significa que solo el propietario tiene acceso.
+  # El nombre del bucket se asigna solo si el parametro no esta vacio, sino se omite para que CloudFormation genere un nombre unico.
   MyS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
+      BucketName: !If [UseCustomBucketName, !Ref BucketName, !Ref 'AWS::NoValue']
       AccessControl: Private
