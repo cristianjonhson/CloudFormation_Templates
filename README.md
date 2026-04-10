@@ -33,6 +33,8 @@ cloudformation/
 ├── 03-iam-role-vpc-s3-bucket.yaml             # IAM Role + VPC + S3 Bucket con política
 ├── 04-iam-user-group-vpc-internet-gateway.yaml # IAM User/Group + S3 + VPC + Internet Gateway
 ├── 05-iam-admin-group-user-vpc-s3.yaml        # IAM Admin + S3 Bucket + VPC
+├── requirements.txt                           # Dependencias para validación local con Python
+├── validate_templates.py                      # Validador YAML local compatible con tags de CloudFormation
 └── README.md
 ```
 
@@ -168,6 +170,24 @@ Antes de desplegar, se recomienda validar la sintaxis del template:
 aws cloudformation validate-template \
   --template-body file://<nombre-del-archivo>.yaml
 ```
+
+### Validación Local con Python
+
+Si quieres una validación rápida sin llamar a AWS, puedes parsear localmente los templates con Python. Este validador entiende tags de CloudFormation como `!Ref`, `!Sub`, `!If` y similares.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Validar todos los templates del repositorio
+python validate_templates.py
+
+# Validar un template concreto
+python validate_templates.py 03-iam-role-vpc-s3-bucket.yaml
+```
+
+Esta validación local comprueba sintaxis YAML y compatibilidad con las etiquetas intrínsecas de CloudFormation, pero no sustituye la validación semántica de AWS.
 
 ---
 
