@@ -16,11 +16,19 @@
 
 # Parametros permiten personalizar el template en cada despliegue
 # sin modificar el codigo fuente directamente.
+
+# LatestAmiId: obtiene dinamicamente la AMI de Amazon Linux mas reciente usando un parametro de tipo AWS::SSM::Parameter::Value que referencia un parametro de SSM Parameter Store. Esto evita hardcodear IDs de AMI que pueden quedar obsoletos o no existir en otras regiones.
 Parameters:
   LatestAmiId:
     Description: AMI dinamica de Amazon Linux via SSM Parameter Store
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
+# AdminCidr: CIDR autorizado para acceso SSH administrativo para restringir el acceso SSH a IPs confiables.
+  AdminCidr:
+    Description: CIDR autorizado para acceso SSH administrativo (ej. 203.0.113.10/32)
+    Type: String
+    Default: 192.168.1.1/32
 
   SecurityGroupDescription:
     Description: Descripcion del grupo de seguridad
@@ -48,21 +56,20 @@ Resources:
       InstanceId: !Ref MyInstance # Asocia la EIP a la instancia EC2 creada arriba
 
   # Security Group de SSH: permite acceso por SSH (puerto 22) desde Internet.
-  # NOTA: CidrIp 0.0.0.0/0 significa acceso desde cualquier IP.
-  #       En produccion se recomienda restringir a IPs de confianza.
+  # El acceso queda restringido al CIDR definido por parametro.
   SSHSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Habilita el acceso SSH a traves del puerto 22
       SecurityGroupIngress:
-      - CidrIp: 0.0.0.0/0
+      - CidrIp: !Ref AdminCidr # CIDR autorizado para acceso SSH administrativo
         FromPort: 22
         IpProtocol: tcp
         ToPort: 22
 
   # Security Group del servidor web:
   #   - Puerto 80 (HTTP) abierto al mundo para servir trafico web.
-  #   - Puerto 22 (SSH) restringido a la IP 192.168.1.1 (red interna).
+  #   - Puerto 22 (SSH) restringido al CIDR administrativo.
   # GroupDescription se toma del parametro SecurityGroupDescription.
   ServerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -76,7 +83,7 @@ Resources:
       - IpProtocol: tcp
         FromPort: 22
         ToPort: 22
-        CidrIp: 192.168.1.1/32  # SSH solo desde red interna
+        CidrIp: !Ref AdminCidr  # SSH solo desde CIDR administrativo
 
 # Outputs exponen valores del stack para consultarlos luego
 # via consola, CLI o para pasarlos a otros stacks.
