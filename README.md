@@ -30,9 +30,9 @@ Este proyecto es un conjunto de plantillas de **Infrastructure as Code (IaC)** e
 cloudformation/
 ├── 01-ec2-basic.yaml                          # EC2 básico (nivel inicial)
 ├── 02-ec2-security-group-elastic-ip.yaml      # EC2 con Security Groups e IP elástica
-├── 03-iam-role-vpc-s3-bucket.yaml             # IAM Role + VPC + S3 Bucket con política
+├── 03-iam-role-vpc-s3-bucket.yaml             # IAM Role + VPC + S3 Bucket privado
 ├── 04-iam-user-group-vpc-internet-gateway.yaml # IAM User/Group + S3 + VPC + Internet Gateway
-├── 05-iam-admin-group-user-vpc-s3.yaml        # IAM Admin + S3 Bucket + VPC
+├── 05-iam-admin-group-user-vpc-s3.yaml        # IAM Group de laboratorio + User + S3 + VPC
 ├── requirements.txt                           # Dependencias para validación local con Python
 ├── validate_templates.py                      # Validador YAML local compatible con tags de CloudFormation
 └── README.md
@@ -63,7 +63,7 @@ Infraestructura completa con usuario y grupo IAM, bucket S3 privado, VPC e Inter
 - **Recursos:** `IAM::User`, `IAM::Group`, `S3::Bucket`, `EC2::VPC`, `EC2::InternetGateway`
 
 ### `05-iam-admin-group-user-vpc-s3.yaml`
-Grupo IAM con política mínima de laboratorio, usuario admin, membresía al grupo, bucket S3 y VPC.
+Grupo IAM con política mínima de laboratorio, usuario IAM, membresía al grupo, bucket S3 y VPC.
 - **Recursos:** `IAM::Group`, `IAM::User`, `IAM::UserToGroupAddition`, `S3::Bucket`, `EC2::VPC`
 
 ---
@@ -117,7 +117,7 @@ aws cloudformation create-stack \
   --template-body file://<nombre-del-archivo>.yaml \
   --capabilities CAPABILITY_NAMED_IAM
 
-# Ejemplo template 01: EC2 basica
+# Ejemplo template 01: EC2 básica
 aws cloudformation create-stack \
   --stack-name ec2-basic-test \
   --template-body file://01-ec2-basic.yaml
@@ -130,9 +130,9 @@ aws cloudformation create-stack \
     ParameterKey=SecurityGroupDescription,ParameterValue="Mi grupo de seguridad" \
     ParameterKey=AdminCidr,ParameterValue="203.0.113.10/32"
 
-# Reemplaza 203.0.113.10/32 por tu IP publica real con mascara /32.
+# Reemplaza 203.0.113.10/32 por tu IP pública real con máscara /32.
 
-# Ejemplo template 03 por defecto (AWS genera RoleName y BucketName)
+# Ejemplo template 03 por defecto (AWS genera `RoleName` y `BucketName`)
 aws cloudformation create-stack \
   --stack-name iam-vpc-s3-stack \
   --template-body file://03-iam-role-vpc-s3-bucket.yaml \
@@ -214,9 +214,11 @@ Esta validación local comprueba sintaxis YAML y compatibilidad con las etiqueta
 ## ⚠️ Consideraciones Importantes
 
 - El template `02-ec2-security-group-elastic-ip.yaml` ahora restringe SSH por parámetro `AdminCidr`; usa tu IP pública con máscara `/32`.
-- El flag `--capabilities CAPABILITY_NAMED_IAM` es obligatorio cuando asignas nombres explícitos a recursos IAM, por ejemplo usando `RoleName` en `03-iam-role-vpc-s3-bucket.yaml`.
+- El flag `--capabilities CAPABILITY_NAMED_IAM` es obligatorio en los templates que crean recursos IAM, y sigue siendo especialmente relevante si asignas nombres explícitos como `RoleName` en `03-iam-role-vpc-s3-bucket.yaml`.
 - El template `01-ec2-basic.yaml` usa por defecto `ami-a4c7edb2`, y permite sobreescribir `AmiId` para otras regiones o AMIs equivalentes.
 - `BucketName` en S3 es opcional; si lo defines, debe ser globalmente único en AWS.
+- `03-iam-role-vpc-s3-bucket.yaml` usa un bucket privado; si necesitas exponer objetos públicamente, añade una política específica en lugar de abrir el bucket completo.
+- `05-iam-admin-group-user-vpc-s3.yaml` ya no asigna `AdministratorAccess`; usa permisos mínimos de laboratorio para reducir riesgo.
 
 ---
 
