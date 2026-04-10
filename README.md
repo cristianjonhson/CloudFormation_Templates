@@ -121,9 +121,15 @@ aws cloudformation create-stack \
   --parameters ParameterKey=SecurityGroupDescription,ParameterValue="Mi grupo de seguridad" \
   --capabilities CAPABILITY_NAMED_IAM
 
-# Ejemplo con nombres opcionales para rol y bucket
+# Ejemplo por defecto en template 03 (AWS genera RoleName y BucketName)
 aws cloudformation create-stack \
   --stack-name iam-vpc-s3-stack \
+  --template-body file://03-iam-role-vpc-s3-bucket.yaml \
+  --capabilities CAPABILITY_NAMED_IAM
+
+# Ejemplo con nombres personalizados para rol y bucket
+aws cloudformation create-stack \
+  --stack-name iam-vpc-s3-custom-stack \
   --template-body file://03-iam-role-vpc-s3-bucket.yaml \
   --parameters ParameterKey=RoleName,ParameterValue="Cris" ParameterKey=BucketName,ParameterValue="mys3-bucket2023" \
   --capabilities CAPABILITY_NAMED_IAM
