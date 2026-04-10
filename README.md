@@ -130,6 +130,8 @@ aws cloudformation create-stack \
     ParameterKey=SecurityGroupDescription,ParameterValue="Mi grupo de seguridad" \
     ParameterKey=AdminCidr,ParameterValue="203.0.113.10/32"
 
+# Reemplaza 203.0.113.10/32 por tu IP publica real con mascara /32.
+
 # Ejemplo template 03 por defecto (AWS genera RoleName y BucketName)
 aws cloudformation create-stack \
   --stack-name iam-vpc-s3-stack \
