@@ -213,13 +213,15 @@ VPC_ID=$(aws cloudformation describe-stacks \
   --stack-name cfn-lab-network-public-base \
   --profile cristianjonhson \
   --query "Stacks[0].Outputs[?OutputKey=='VpcId'].OutputValue" \
-  --output text)
+  --output text \
+  --no-cli-pager)
 
 SUBNET_ID=$(aws cloudformation describe-stacks \
   --stack-name cfn-lab-network-public-base \
   --profile cristianjonhson \
   --query "Stacks[0].Outputs[?OutputKey=='PublicSubnetId'].OutputValue" \
-  --output text)
+  --output text \
+  --no-cli-pager)
 
 echo "VPC_ID=$VPC_ID"
 echo "SUBNET_ID=$SUBNET_ID"
@@ -265,8 +267,10 @@ aws cloudformation wait stack-delete-complete --stack-name cfn-lab-network-publi
 # Consulta los outputs para obtener VpcId y PublicSubnetId para la plantilla 02
 aws cloudformation describe-stacks \
   --stack-name cfn-lab-network-public-base \
+  --profile cristianjonhson \
   --query 'Stacks[0].Outputs[*].[OutputKey,OutputValue]' \
-  --output table
+  --output table \
+  --no-cli-pager
 
 # Ejemplo template 02: EC2 + Security Groups + Elastic IP
 aws cloudformation create-stack \
@@ -288,8 +292,10 @@ aws cloudformation wait stack-create-complete \
 # Obtener directamente la Elastic IP desde los outputs del stack
 aws cloudformation describe-stacks \
   --stack-name cfn-lab-ec2-sg-eip \
+  --profile cristianjonhson \
   --query "Stacks[0].Outputs[?OutputKey=='ElasticIp'].OutputValue" \
-  --output text
+  --output text \
+  --no-cli-pager
 
 # Listar todos los recursos creados por el stack
 aws cloudformation list-stack-resources \
@@ -397,9 +403,9 @@ Prerrequisito: tener creado el stack `cfn-lab-network-public-base` con `1.5-publ
 
 ```bash
 # 0) Tomar datos de red del stack 1.5
-VPC_ID=$(aws cloudformation describe-stacks --stack-name cfn-lab-network-public-base --query "Stacks[0].Outputs[?OutputKey=='VpcId'].OutputValue" --output text)
-PUBLIC_SUBNET_A=$(aws cloudformation describe-stacks --stack-name cfn-lab-network-public-base --query "Stacks[0].Outputs[?OutputKey=='PublicSubnetId'].OutputValue" --output text)
-PUBLIC_RT=$(aws cloudformation describe-stacks --stack-name cfn-lab-network-public-base --query "Stacks[0].Outputs[?OutputKey=='RouteTableId'].OutputValue" --output text)
+VPC_ID=$(aws cloudformation describe-stacks --stack-name cfn-lab-network-public-base --profile cristianjonhson --query "Stacks[0].Outputs[?OutputKey=='VpcId'].OutputValue" --output text --no-cli-pager)
+PUBLIC_SUBNET_A=$(aws cloudformation describe-stacks --stack-name cfn-lab-network-public-base --profile cristianjonhson --query "Stacks[0].Outputs[?OutputKey=='PublicSubnetId'].OutputValue" --output text --no-cli-pager)
+PUBLIC_RT=$(aws cloudformation describe-stacks --stack-name cfn-lab-network-public-base --profile cristianjonhson --query "Stacks[0].Outputs[?OutputKey=='RouteTableId'].OutputValue" --output text --no-cli-pager)
 
 # 1) Crear segunda subnet publica para 4.5 (ALB requiere dos subnets)
 PUBLIC_SUBNET_B=$(aws ec2 create-subnet \
@@ -422,7 +428,7 @@ aws cloudformation create-stack \
 aws cloudformation wait stack-create-complete --stack-name cfn-lab-network-nat-private
 
 # 3) Desplegar 3.5 (EC2 administrable por SSM sin SSH)
-PRIVATE_SUBNET_ID=$(aws cloudformation describe-stacks --stack-name cfn-lab-network-nat-private --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnetId'].OutputValue" --output text)
+PRIVATE_SUBNET_ID=$(aws cloudformation describe-stacks --stack-name cfn-lab-network-nat-private --profile cristianjonhson --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnetId'].OutputValue" --output text --no-cli-pager)
 
 aws cloudformation create-stack \
   --stack-name cfn-lab-ec2-ssm-private \
@@ -435,7 +441,7 @@ aws cloudformation create-stack \
 aws cloudformation wait stack-create-complete --stack-name cfn-lab-ec2-ssm-private
 
 # Prueba 3.5: validar que la instancia aparece en SSM
-INSTANCE_ID=$(aws cloudformation describe-stacks --stack-name cfn-lab-ec2-ssm-private --query "Stacks[0].Outputs[?OutputKey=='Ec2InstanceId'].OutputValue" --output text)
+INSTANCE_ID=$(aws cloudformation describe-stacks --stack-name cfn-lab-ec2-ssm-private --profile cristianjonhson --query "Stacks[0].Outputs[?OutputKey=='Ec2InstanceId'].OutputValue" --output text --no-cli-pager)
 aws ssm describe-instance-information --filters "Key=InstanceIds,Values=$INSTANCE_ID" --query 'InstanceInformationList[0].PingStatus' --output text
 
 # 4) Desplegar 4.5 (ALB + Auto Scaling)
@@ -449,7 +455,7 @@ aws cloudformation create-stack \
 aws cloudformation wait stack-create-complete --stack-name cfn-lab-alb-asg-web
 
 # Prueba 4.5: obtener DNS del ALB y probar respuesta HTTP
-ALB_DNS=$(aws cloudformation describe-stacks --stack-name cfn-lab-alb-asg-web --query "Stacks[0].Outputs[?OutputKey=='LoadBalancerDnsName'].OutputValue" --output text)
+ALB_DNS=$(aws cloudformation describe-stacks --stack-name cfn-lab-alb-asg-web --profile cristianjonhson --query "Stacks[0].Outputs[?OutputKey=='LoadBalancerDnsName'].OutputValue" --output text --no-cli-pager)
 curl "http://$ALB_DNS"
 ```
 
