@@ -132,6 +132,7 @@ aws cloudformation create-stack \
   --stack-name ec2-basic-test \
   --template-body file://01-ec2-basic.yaml \
   --parameters ParameterKey=SubnetId,ParameterValue="subnet-xxxxxxxx"
+aws cloudformation wait stack-create-complete --stack-name ec2-basic-test
 
 # Eliminar stack del template 01
 aws cloudformation delete-stack --stack-name ec2-basic-test
@@ -145,6 +146,7 @@ aws cloudformation wait stack-delete-complete --stack-name ec2-basic-test
 aws cloudformation create-stack \
   --stack-name public-network-base \
   --template-body file://1.5-public-vpc-subnet-igw-route.yaml
+aws cloudformation wait stack-create-complete --stack-name public-network-base
 
 # Eliminar stack del template 1.5
 aws cloudformation delete-stack --stack-name public-network-base
@@ -192,6 +194,7 @@ aws cloudformation create-stack \
   --stack-name iam-vpc-s3-stack \
   --template-body file://03-iam-role-vpc-s3-bucket.yaml \
   --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation wait stack-create-complete --stack-name iam-vpc-s3-stack
 
 # Eliminar stack del template 03 por defecto
 aws cloudformation delete-stack --stack-name iam-vpc-s3-stack
@@ -203,6 +206,7 @@ aws cloudformation create-stack \
   --template-body file://03-iam-role-vpc-s3-bucket.yaml \
   --parameters ParameterKey=RoleName,ParameterValue="Cris" ParameterKey=BucketName,ParameterValue="mys3-bucket2023" \
   --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation wait stack-create-complete --stack-name iam-vpc-s3-custom-stack
 
 # Eliminar stack del template 03 con nombres personalizados
 aws cloudformation delete-stack --stack-name iam-vpc-s3-custom-stack
@@ -213,12 +217,13 @@ aws cloudformation create-stack \
   --stack-name iam-user-group-vpc-igw-test \
   --template-body file://04-iam-user-group-vpc-internet-gateway.yaml \
   --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation wait stack-create-complete --stack-name iam-user-group-vpc-igw-test
 
 # Eliminar stack del template 04
 aws cloudformation delete-stack --stack-name iam-user-group-vpc-igw-test
 
 
-#Eliminar
+# Esperar a que termine el borrado del stack
 aws cloudformation wait stack-delete-complete --stack-name iam-user-group-vpc-igw-test
 
 # Ejemplo template 05: IAM Group con permisos de laboratorio + User + S3 + VPC
@@ -226,6 +231,7 @@ aws cloudformation create-stack \
   --stack-name iam-lab-user-vpc-s3-test \
   --template-body file://05-iam-admin-group-user-vpc-s3.yaml \
   --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation wait stack-create-complete --stack-name iam-lab-user-vpc-s3-test
 
 # Eliminar stack del template 05
 aws cloudformation delete-stack --stack-name iam-lab-user-vpc-s3-test
