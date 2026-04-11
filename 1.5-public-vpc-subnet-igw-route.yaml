@@ -1,0 +1,96 @@
+# =============================================================
+# Template: 1.5-public-vpc-subnet-igw-route.yaml
+# Descripcion: Crea una red publica minima para desplegar EC2
+#   accesibles desde Internet dentro de una VPC.
+# Recursos creados:
+#   - VPC
+#   - Public Subnet
+#   - Internet Gateway
+#   - VPC Gateway Attachment
+#   - Route Table
+#   - Default Route (0.0.0.0/0)
+#   - Subnet Route Table Association
+# Outputs:
+#   - VpcId
+#   - PublicSubnetId
+#   - InternetGatewayId
+#   - RouteTableId
+# =============================================================
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  VpcCidr:
+    Description: CIDR block para la VPC
+    Type: String
+    Default: 10.0.0.0/16
+
+  PublicSubnetCidr:
+    Description: CIDR block para la subnet publica
+    Type: String
+    Default: 10.0.1.0/24
+
+  AvailabilityZone:
+    Description: Zona de disponibilidad para la subnet publica
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: us-east-1a
+
+Resources:
+  PublicVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref PublicVPC
+      CidrBlock: !Ref PublicSubnetCidr
+      AvailabilityZone: !Ref AvailabilityZone
+      MapPublicIpOnLaunch: true
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref PublicVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref PublicVPC
+
+  DefaultInternetRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+Outputs:
+  VpcId:
+    Description: ID de la VPC creada
+    Value: !Ref PublicVPC
+
+  PublicSubnetId:
+    Description: ID de la subnet publica creada
+    Value: !Ref PublicSubnet
+
+  InternetGatewayId:
+    Description: ID de la Internet Gateway creada
+    Value: !Ref InternetGateway
+
+  RouteTableId:
+    Description: ID de la route table publica
+    Value: !Ref PublicRouteTable
