@@ -152,10 +152,10 @@ Resources:
         Version: !GetAtt Ec2LaunchTemplateWeb.LatestVersionNumber
 
 Outputs:
-  LoadBalancerDNS:
+  LoadBalancerDnsName:
     Description: DNS publico del Application Load Balancer
     Value: !GetAtt AlbPublic.DNSName
 
-  TargetGroupArn:
+  AlbTargetGroupArn:
     Description: ARN del target group del ALB
     Value: !Ref AlbTargetGroupWeb
