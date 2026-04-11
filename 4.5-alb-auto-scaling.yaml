@@ -99,7 +99,7 @@ Resources:
   AlbPublic:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: lab-alb
+      Name: cfn-lab-alb-web
       Scheme: internet-facing
       Type: application
       Subnets:
@@ -121,6 +121,7 @@ Resources:
   Ec2LaunchTemplateWeb:
     Type: AWS::EC2::LaunchTemplate
     Properties:
+      LaunchTemplateName: !Sub cfn-lab-lt-web-${AWS::StackName}
       LaunchTemplateData:
         ImageId: !Ref LatestAmiId
         InstanceType: !Ref InstanceType
