@@ -33,3 +33,6 @@ Resources:
       SubnetId: !Ref SubnetId
       ImageId: !Ref LatestAmiId # AMI dinamica obtenida del parametro SSM
       InstanceType: t2.micro
+      Tags:
+        - Key: Name
+          Value: !Sub cfn-lab-ec2-basic-${AWS::StackName}
