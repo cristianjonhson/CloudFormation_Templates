@@ -135,6 +135,7 @@ aws cloudformation create-stack \
 
 # Eliminar stack del template 01
 aws cloudformation delete-stack --stack-name ec2-basic-test
+aws cloudformation wait stack-delete-complete --stack-name ec2-basic-test
 
 # Esta plantilla solo crea la instancia dentro de la subnet indicada.
 # Si necesitas conectarte desde Internet, usa una subnet publica y configura IP publica,
@@ -147,6 +148,7 @@ aws cloudformation create-stack \
 
 # Eliminar stack del template 1.5
 aws cloudformation delete-stack --stack-name public-network-base
+aws cloudformation wait stack-delete-complete --stack-name public-network-base
 
 # Consulta los outputs para obtener VpcId y PublicSubnetId para la plantilla 02
 aws cloudformation describe-stacks \
@@ -183,6 +185,7 @@ aws cloudformation list-stack-resources \
 
 # Eliminar stack del template 02
 aws cloudformation delete-stack --stack-name ec2-sg-eip-stack
+aws cloudformation wait stack-delete-complete --stack-name ec2-sg-eip-stack
 
 # Ejemplo template 03 por defecto (AWS genera `RoleName` y `BucketName`)
 aws cloudformation create-stack \
@@ -192,6 +195,7 @@ aws cloudformation create-stack \
 
 # Eliminar stack del template 03 por defecto
 aws cloudformation delete-stack --stack-name iam-vpc-s3-stack
+aws cloudformation wait stack-delete-complete --stack-name iam-vpc-s3-stack
 
 # Ejemplo template 03 con nombres personalizados para rol y bucket
 aws cloudformation create-stack \
@@ -202,6 +206,7 @@ aws cloudformation create-stack \
 
 # Eliminar stack del template 03 con nombres personalizados
 aws cloudformation delete-stack --stack-name iam-vpc-s3-custom-stack
+aws cloudformation wait stack-delete-complete --stack-name iam-vpc-s3-custom-stack
 
 # Ejemplo template 04: IAM User + IAM Group + S3 + VPC + Internet Gateway
 aws cloudformation create-stack \
@@ -212,6 +217,10 @@ aws cloudformation create-stack \
 # Eliminar stack del template 04
 aws cloudformation delete-stack --stack-name iam-user-group-vpc-igw-test
 
+
+#Eliminar
+aws cloudformation wait stack-delete-complete --stack-name iam-user-group-vpc-igw-test
+
 # Ejemplo template 05: IAM Group con permisos de laboratorio + User + S3 + VPC
 aws cloudformation create-stack \
   --stack-name iam-lab-user-vpc-s3-test \
@@ -220,6 +229,7 @@ aws cloudformation create-stack \
 
 # Eliminar stack del template 05
 aws cloudformation delete-stack --stack-name iam-lab-user-vpc-s3-test
+aws cloudformation wait stack-delete-complete --stack-name iam-lab-user-vpc-s3-test
 ```
 
 ### Opción 2 — Consola de AWS
