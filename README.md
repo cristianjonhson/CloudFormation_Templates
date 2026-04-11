@@ -163,6 +163,13 @@ export AWS_PROFILE=cristianjonhson
 ### Opción 1 — AWS CLI
 
 ```bash
+# Convencion sugerida para stack names declarativos:
+# cfn-lab-<dominio>-<servicio>-<alcance>
+# Ejemplos:
+# - cfn-lab-network-public-base
+# - cfn-lab-ec2-sg-eip
+# - cfn-lab-alb-asg-web
+
 # Crear un stack nuevo
 aws cloudformation create-stack \
   --stack-name <nombre-del-stack> \
@@ -171,23 +178,23 @@ aws cloudformation create-stack \
 
 # Prerrequisito de red (recomendado): crear VPC + subnet publica con el template 1.5
 aws cloudformation create-stack \
-  --stack-name public-network-base \
+  --stack-name cfn-lab-network-public-base \
   --template-body file://1.5-public-vpc-subnet-igw-route.yaml \
   --profile cristianjonhson \
   --no-cli-pager
 aws cloudformation wait stack-create-complete \
-  --stack-name public-network-base \
+  --stack-name cfn-lab-network-public-base \
   --profile cristianjonhson
 
 # Obtener VpcId y SubnetId para reutilizarlos en 01, 02 y 3.5
 VPC_ID=$(aws cloudformation describe-stacks \
-  --stack-name public-network-base \
+  --stack-name cfn-lab-network-public-base \
   --profile cristianjonhson \
   --query "Stacks[0].Outputs[?OutputKey=='VpcId'].OutputValue" \
   --output text)
 
 SUBNET_ID=$(aws cloudformation describe-stacks \
-  --stack-name public-network-base \
+  --stack-name cfn-lab-network-public-base \
   --profile cristianjonhson \
   --query "Stacks[0].Outputs[?OutputKey=='PublicSubnetId'].OutputValue" \
   --output text)
@@ -208,16 +215,16 @@ aws ec2 create-subnet \
 
 # Ejemplo template 01: EC2 básica
 aws cloudformation create-stack \
-  --stack-name ec2-basic-test \
+  --stack-name cfn-lab-ec2-basic \
   --template-body file://01-ec2-basic.yaml \
   --parameters ParameterKey=SubnetId,ParameterValue="$SUBNET_ID" \
   --profile cristianjonhson \
   --no-cli-pager
-aws cloudformation wait stack-create-complete --stack-name ec2-basic-test --profile cristianjonhson
+aws cloudformation wait stack-create-complete --stack-name cfn-lab-ec2-basic --profile cristianjonhson
 
 # Eliminar stack del template 01
-aws cloudformation delete-stack --stack-name ec2-basic-test
-aws cloudformation wait stack-delete-complete --stack-name ec2-basic-test
+aws cloudformation delete-stack --stack-name cfn-lab-ec2-basic
+aws cloudformation wait stack-delete-complete --stack-name cfn-lab-ec2-basic
 
 # Esta plantilla solo crea la instancia dentro de la subnet indicada.
 # Si necesitas conectarte desde Internet, usa una subnet publica y configura IP publica,
@@ -225,23 +232,23 @@ aws cloudformation wait stack-delete-complete --stack-name ec2-basic-test
 
 # Ejemplo template 1.5: crear VPC + subnet publica + Internet Gateway + ruta publica
 aws cloudformation create-stack \
-  --stack-name public-network-base \
+  --stack-name cfn-lab-network-public-base \
   --template-body file://1.5-public-vpc-subnet-igw-route.yaml
-aws cloudformation wait stack-create-complete --stack-name public-network-base
+aws cloudformation wait stack-create-complete --stack-name cfn-lab-network-public-base
 
 # Eliminar stack del template 1.5
-aws cloudformation delete-stack --stack-name public-network-base
-aws cloudformation wait stack-delete-complete --stack-name public-network-base
+aws cloudformation delete-stack --stack-name cfn-lab-network-public-base
+aws cloudformation wait stack-delete-complete --stack-name cfn-lab-network-public-base
 
 # Consulta los outputs para obtener VpcId y PublicSubnetId para la plantilla 02
 aws cloudformation describe-stacks \
-  --stack-name public-network-base \
+  --stack-name cfn-lab-network-public-base \
   --query 'Stacks[0].Outputs[*].[OutputKey,OutputValue]' \
   --output table
 
 # Ejemplo template 02: EC2 + Security Groups + Elastic IP
 aws cloudformation create-stack \
-  --stack-name ec2-sg-eip-stack \
+  --stack-name cfn-lab-ec2-sg-eip \
   --template-body file://02-ec2-security-group-elastic-ip.yaml \
   --parameters \
     ParameterKey=VpcId,ParameterValue="vpc-xxxxxxxx" \
@@ -254,123 +261,123 @@ aws cloudformation create-stack \
 
 # Esperar a que termine la creación del stack
 aws cloudformation wait stack-create-complete \
-  --stack-name ec2-sg-eip-stack
+  --stack-name cfn-lab-ec2-sg-eip
 
 # Obtener directamente la Elastic IP desde los outputs del stack
 aws cloudformation describe-stacks \
-  --stack-name ec2-sg-eip-stack \
+  --stack-name cfn-lab-ec2-sg-eip \
   --query "Stacks[0].Outputs[?OutputKey=='ElasticIP'].OutputValue" \
   --output text
 
 # Listar todos los recursos creados por el stack
 aws cloudformation list-stack-resources \
-  --stack-name ec2-sg-eip-stack
+  --stack-name cfn-lab-ec2-sg-eip
 
 # Eliminar stack del template 02
-aws cloudformation delete-stack --stack-name ec2-sg-eip-stack
-aws cloudformation wait stack-delete-complete --stack-name ec2-sg-eip-stack
+aws cloudformation delete-stack --stack-name cfn-lab-ec2-sg-eip
+aws cloudformation wait stack-delete-complete --stack-name cfn-lab-ec2-sg-eip
 
 # Ejemplo template 03 por defecto (AWS genera `RoleName` y `BucketName`)
 aws cloudformation create-stack \
-  --stack-name iam-vpc-s3-stack \
+  --stack-name cfn-lab-iam-vpc-s3-default \
   --template-body file://03-iam-role-vpc-s3-bucket.yaml \
   --capabilities CAPABILITY_NAMED_IAM
-aws cloudformation wait stack-create-complete --stack-name iam-vpc-s3-stack
+aws cloudformation wait stack-create-complete --stack-name cfn-lab-iam-vpc-s3-default
 
 # Eliminar stack del template 03 por defecto
-aws cloudformation delete-stack --stack-name iam-vpc-s3-stack
-aws cloudformation wait stack-delete-complete --stack-name iam-vpc-s3-stack
+aws cloudformation delete-stack --stack-name cfn-lab-iam-vpc-s3-default
+aws cloudformation wait stack-delete-complete --stack-name cfn-lab-iam-vpc-s3-default
 
 # Ejemplo template 03 con nombres personalizados para rol y bucket
 aws cloudformation create-stack \
-  --stack-name iam-vpc-s3-custom-stack \
+  --stack-name cfn-lab-iam-vpc-s3-custom-names \
   --template-body file://03-iam-role-vpc-s3-bucket.yaml \
   --parameters ParameterKey=RoleName,ParameterValue="Cris" ParameterKey=BucketName,ParameterValue="mys3-bucket2023" \
   --capabilities CAPABILITY_NAMED_IAM
-aws cloudformation wait stack-create-complete --stack-name iam-vpc-s3-custom-stack
+aws cloudformation wait stack-create-complete --stack-name cfn-lab-iam-vpc-s3-custom-names
 
 # Eliminar stack del template 03 con nombres personalizados
-aws cloudformation delete-stack --stack-name iam-vpc-s3-custom-stack
-aws cloudformation wait stack-delete-complete --stack-name iam-vpc-s3-custom-stack
+aws cloudformation delete-stack --stack-name cfn-lab-iam-vpc-s3-custom-names
+aws cloudformation wait stack-delete-complete --stack-name cfn-lab-iam-vpc-s3-custom-names
 
 # Ejemplo template 2.5: NAT Gateway + subnet privada
 aws cloudformation create-stack \
-  --stack-name nat-private-subnet-test \
+  --stack-name cfn-lab-network-nat-private \
   --template-body file://2.5-nat-private-subnet.yaml \
   --parameters \
     ParameterKey=VpcId,ParameterValue="vpc-xxxxxxxx" \
     ParameterKey=PublicSubnetId,ParameterValue="subnet-xxxxxxxx"
-aws cloudformation wait stack-create-complete --stack-name nat-private-subnet-test
+aws cloudformation wait stack-create-complete --stack-name cfn-lab-network-nat-private
 
 # Eliminar stack del template 2.5
-aws cloudformation delete-stack --stack-name nat-private-subnet-test
-aws cloudformation wait stack-delete-complete --stack-name nat-private-subnet-test
+aws cloudformation delete-stack --stack-name cfn-lab-network-nat-private
+aws cloudformation wait stack-delete-complete --stack-name cfn-lab-network-nat-private
 
 # Ejemplo template 3.5: EC2 administrable por SSM sin SSH
 aws cloudformation create-stack \
-  --stack-name ec2-ssm-no-ssh-test \
+  --stack-name cfn-lab-ec2-ssm-private \
   --template-body file://3.5-ec2-ssm-no-ssh.yaml \
   --parameters \
     ParameterKey=VpcId,ParameterValue="vpc-xxxxxxxx" \
     ParameterKey=SubnetId,ParameterValue="subnet-xxxxxxxx" \
     ParameterKey=InstanceType,ParameterValue="t2.micro" \
   --capabilities CAPABILITY_NAMED_IAM
-aws cloudformation wait stack-create-complete --stack-name ec2-ssm-no-ssh-test
+aws cloudformation wait stack-create-complete --stack-name cfn-lab-ec2-ssm-private
 
 # Eliminar stack del template 3.5
-aws cloudformation delete-stack --stack-name ec2-ssm-no-ssh-test
-aws cloudformation wait stack-delete-complete --stack-name ec2-ssm-no-ssh-test
+aws cloudformation delete-stack --stack-name cfn-lab-ec2-ssm-private
+aws cloudformation wait stack-delete-complete --stack-name cfn-lab-ec2-ssm-private
 
 # Ejemplo template 04: IAM User + IAM Group + S3 + VPC + Internet Gateway
 aws cloudformation create-stack \
-  --stack-name iam-user-group-vpc-igw-test \
+  --stack-name cfn-lab-iam-user-group-vpc-igw \
   --template-body file://04-iam-user-group-vpc-internet-gateway.yaml \
   --capabilities CAPABILITY_NAMED_IAM
-aws cloudformation wait stack-create-complete --stack-name iam-user-group-vpc-igw-test
+aws cloudformation wait stack-create-complete --stack-name cfn-lab-iam-user-group-vpc-igw
 
 # Eliminar stack del template 04
-aws cloudformation delete-stack --stack-name iam-user-group-vpc-igw-test
-aws cloudformation wait stack-delete-complete --stack-name iam-user-group-vpc-igw-test
+aws cloudformation delete-stack --stack-name cfn-lab-iam-user-group-vpc-igw
+aws cloudformation wait stack-delete-complete --stack-name cfn-lab-iam-user-group-vpc-igw
 
 # Ejemplo template 4.5: ALB + Auto Scaling
 aws cloudformation create-stack \
-  --stack-name alb-asg-test \
+  --stack-name cfn-lab-alb-asg-web \
   --template-body file://4.5-alb-auto-scaling.yaml \
   --parameters \
     ParameterKey=VpcId,ParameterValue="vpc-xxxxxxxx" \
     ParameterKey=PublicSubnetA,ParameterValue="subnet-aaaaaaa" \
     ParameterKey=PublicSubnetB,ParameterValue="subnet-bbbbbbb"
-aws cloudformation wait stack-create-complete --stack-name alb-asg-test
+aws cloudformation wait stack-create-complete --stack-name cfn-lab-alb-asg-web
 
 # Eliminar stack del template 4.5
-aws cloudformation delete-stack --stack-name alb-asg-test
-aws cloudformation wait stack-delete-complete --stack-name alb-asg-test
+aws cloudformation delete-stack --stack-name cfn-lab-alb-asg-web
+aws cloudformation wait stack-delete-complete --stack-name cfn-lab-alb-asg-web
 
 # Ejemplo template 05: IAM Group con permisos de laboratorio + User + S3 + VPC
 aws cloudformation create-stack \
-  --stack-name iam-lab-user-vpc-s3-test \
+  --stack-name cfn-lab-iam-user-group-vpc-s3 \
   --template-body file://05-iam-admin-group-user-vpc-s3.yaml \
   --capabilities CAPABILITY_NAMED_IAM
-aws cloudformation wait stack-create-complete --stack-name iam-lab-user-vpc-s3-test
+aws cloudformation wait stack-create-complete --stack-name cfn-lab-iam-user-group-vpc-s3
 
 # Eliminar stack del template 05
-aws cloudformation delete-stack --stack-name iam-lab-user-vpc-s3-test
-aws cloudformation wait stack-delete-complete --stack-name iam-lab-user-vpc-s3-test
+aws cloudformation delete-stack --stack-name cfn-lab-iam-user-group-vpc-s3
+aws cloudformation wait stack-delete-complete --stack-name cfn-lab-iam-user-group-vpc-s3
 
 # Eliminar stack del template 1.5 (hacerlo al final para no romper dependencias)
-aws cloudformation delete-stack --stack-name public-network-base
-aws cloudformation wait stack-delete-complete --stack-name public-network-base
+aws cloudformation delete-stack --stack-name cfn-lab-network-public-base
+aws cloudformation wait stack-delete-complete --stack-name cfn-lab-network-public-base
 ```
 
 ### Bloque Único: Desplegar y Probar 2.5 → 3.5 → 4.5
 
-Prerrequisito: tener creado el stack `public-network-base` con `1.5-public-vpc-subnet-igw-route.yaml`.
+Prerrequisito: tener creado el stack `cfn-lab-network-public-base` con `1.5-public-vpc-subnet-igw-route.yaml`.
 
 ```bash
 # 0) Tomar datos de red del stack 1.5
-VPC_ID=$(aws cloudformation describe-stacks --stack-name public-network-base --query "Stacks[0].Outputs[?OutputKey=='VpcId'].OutputValue" --output text)
-PUBLIC_SUBNET_A=$(aws cloudformation describe-stacks --stack-name public-network-base --query "Stacks[0].Outputs[?OutputKey=='PublicSubnetId'].OutputValue" --output text)
-PUBLIC_RT=$(aws cloudformation describe-stacks --stack-name public-network-base --query "Stacks[0].Outputs[?OutputKey=='RouteTableId'].OutputValue" --output text)
+VPC_ID=$(aws cloudformation describe-stacks --stack-name cfn-lab-network-public-base --query "Stacks[0].Outputs[?OutputKey=='VpcId'].OutputValue" --output text)
+PUBLIC_SUBNET_A=$(aws cloudformation describe-stacks --stack-name cfn-lab-network-public-base --query "Stacks[0].Outputs[?OutputKey=='PublicSubnetId'].OutputValue" --output text)
+PUBLIC_RT=$(aws cloudformation describe-stacks --stack-name cfn-lab-network-public-base --query "Stacks[0].Outputs[?OutputKey=='RouteTableId'].OutputValue" --output text)
 
 # 1) Crear segunda subnet publica para 4.5 (ALB requiere dos subnets)
 PUBLIC_SUBNET_B=$(aws ec2 create-subnet \
@@ -385,42 +392,42 @@ aws ec2 modify-subnet-attribute --subnet-id "$PUBLIC_SUBNET_B" --map-public-ip-o
 
 # 2) Desplegar 2.5 (NAT + subnet privada)
 aws cloudformation create-stack \
-  --stack-name nat-private-subnet-test \
+  --stack-name cfn-lab-network-nat-private \
   --template-body file://2.5-nat-private-subnet.yaml \
   --parameters \
     ParameterKey=VpcId,ParameterValue="$VPC_ID" \
     ParameterKey=PublicSubnetId,ParameterValue="$PUBLIC_SUBNET_A"
-aws cloudformation wait stack-create-complete --stack-name nat-private-subnet-test
+aws cloudformation wait stack-create-complete --stack-name cfn-lab-network-nat-private
 
 # 3) Desplegar 3.5 (EC2 administrable por SSM sin SSH)
-PRIVATE_SUBNET_ID=$(aws cloudformation describe-stacks --stack-name nat-private-subnet-test --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnetId'].OutputValue" --output text)
+PRIVATE_SUBNET_ID=$(aws cloudformation describe-stacks --stack-name cfn-lab-network-nat-private --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnetId'].OutputValue" --output text)
 
 aws cloudformation create-stack \
-  --stack-name ec2-ssm-no-ssh-test \
+  --stack-name cfn-lab-ec2-ssm-private \
   --template-body file://3.5-ec2-ssm-no-ssh.yaml \
   --parameters \
     ParameterKey=VpcId,ParameterValue="$VPC_ID" \
     ParameterKey=SubnetId,ParameterValue="$PRIVATE_SUBNET_ID" \
     ParameterKey=InstanceType,ParameterValue="t2.micro" \
   --capabilities CAPABILITY_IAM
-aws cloudformation wait stack-create-complete --stack-name ec2-ssm-no-ssh-test
+aws cloudformation wait stack-create-complete --stack-name cfn-lab-ec2-ssm-private
 
 # Prueba 3.5: validar que la instancia aparece en SSM
-INSTANCE_ID=$(aws cloudformation describe-stacks --stack-name ec2-ssm-no-ssh-test --query "Stacks[0].Outputs[?OutputKey=='InstanceId'].OutputValue" --output text)
+INSTANCE_ID=$(aws cloudformation describe-stacks --stack-name cfn-lab-ec2-ssm-private --query "Stacks[0].Outputs[?OutputKey=='InstanceId'].OutputValue" --output text)
 aws ssm describe-instance-information --filters "Key=InstanceIds,Values=$INSTANCE_ID" --query 'InstanceInformationList[0].PingStatus' --output text
 
 # 4) Desplegar 4.5 (ALB + Auto Scaling)
 aws cloudformation create-stack \
-  --stack-name alb-asg-test \
+  --stack-name cfn-lab-alb-asg-web \
   --template-body file://4.5-alb-auto-scaling.yaml \
   --parameters \
     ParameterKey=VpcId,ParameterValue="$VPC_ID" \
     ParameterKey=PublicSubnetA,ParameterValue="$PUBLIC_SUBNET_A" \
     ParameterKey=PublicSubnetB,ParameterValue="$PUBLIC_SUBNET_B"
-aws cloudformation wait stack-create-complete --stack-name alb-asg-test
+aws cloudformation wait stack-create-complete --stack-name cfn-lab-alb-asg-web
 
 # Prueba 4.5: obtener DNS del ALB y probar respuesta HTTP
-ALB_DNS=$(aws cloudformation describe-stacks --stack-name alb-asg-test --query "Stacks[0].Outputs[?OutputKey=='LoadBalancerDNS'].OutputValue" --output text)
+ALB_DNS=$(aws cloudformation describe-stacks --stack-name cfn-lab-alb-asg-web --query "Stacks[0].Outputs[?OutputKey=='LoadBalancerDNS'].OutputValue" --output text)
 curl "http://$ALB_DNS"
 ```
 
