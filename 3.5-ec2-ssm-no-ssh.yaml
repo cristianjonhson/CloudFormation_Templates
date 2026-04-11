@@ -41,6 +41,7 @@ Resources:
   IamRoleSsmInstance:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: !Sub cfn-lab-iam-role-ssm-instance-${AWS::StackName}
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -54,6 +55,7 @@ Resources:
   IamInstanceProfileSsm:
     Type: AWS::IAM::InstanceProfile
     Properties:
+      InstanceProfileName: !Sub cfn-lab-iam-instance-profile-ssm-${AWS::StackName}
       Roles:
         - !Ref IamRoleSsmInstance
 
@@ -62,6 +64,9 @@ Resources:
     Properties:
       VpcId: !Ref VpcId
       GroupDescription: Security Group sin ingreso, administracion solo por SSM
+      Tags:
+        - Key: Name
+          Value: !Sub cfn-lab-sg-no-ssh-${AWS::StackName}
       SecurityGroupEgress:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
@@ -75,6 +80,9 @@ Resources:
       IamInstanceProfile: !Ref IamInstanceProfileSsm
       SecurityGroupIds:
         - !Ref SecurityGroupNoSsh
+      Tags:
+        - Key: Name
+          Value: !Sub cfn-lab-ec2-ssm-managed-${AWS::StackName}
 
 Outputs:
   InstanceId:
