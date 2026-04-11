@@ -1,0 +1,90 @@
+# =============================================================
+# Template: 3.5-ec2-ssm-no-ssh.yaml
+# Descripcion: Lanza una instancia EC2 administrable por
+#   AWS Systems Manager Session Manager, sin abrir SSH publico.
+# Recursos creados:
+#   - IAM Role con AmazonSSMManagedInstanceCore
+#   - IAM Instance Profile
+#   - Security Group sin reglas de ingreso
+#   - EC2 Instance en subnet indicada
+# Outputs:
+#   - InstanceId
+#   - InstanceProfileName
+#   - RoleArn
+# =============================================================
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC donde se creara el security group
+
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet donde se lanzara la instancia
+
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+    Description: AMI dinamica de Amazon Linux via SSM Parameter Store
+
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+      - t3.small
+    Description: Tipo de instancia EC2
+
+Resources:
+  SsmInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+  SsmInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref SsmInstanceRole
+
+  NoSshSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupDescription: Security Group sin ingreso, administracion solo por SSM
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  SsmManagedInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      SubnetId: !Ref SubnetId
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref SsmInstanceProfile
+      SecurityGroupIds:
+        - !Ref NoSshSecurityGroup
+
+Outputs:
+  InstanceId:
+    Description: ID de la instancia EC2 administrable por SSM
+    Value: !Ref SsmManagedInstance
+
+  InstanceProfileName:
+    Description: Nombre del instance profile asociado
+    Value: !Ref SsmInstanceProfile
+
+  RoleArn:
+    Description: ARN del rol IAM usado por la instancia
+    Value: !GetAtt SsmInstanceRole.Arn
