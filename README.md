@@ -133,6 +133,9 @@ aws cloudformation create-stack \
   --template-body file://01-ec2-basic.yaml \
   --parameters ParameterKey=SubnetId,ParameterValue="subnet-xxxxxxxx"
 
+# Eliminar stack del template 01
+aws cloudformation delete-stack --stack-name ec2-basic-test
+
 # Esta plantilla solo crea la instancia dentro de la subnet indicada.
 # Si necesitas conectarte desde Internet, usa una subnet publica y configura IP publica,
 # reglas SSH y salida por Internet en tu red, o usa la plantilla 02.
@@ -141,6 +144,9 @@ aws cloudformation create-stack \
 aws cloudformation create-stack \
   --stack-name public-network-base \
   --template-body file://1.5-public-vpc-subnet-igw-route.yaml
+
+# Eliminar stack del template 1.5
+aws cloudformation delete-stack --stack-name public-network-base
 
 # Consulta los outputs para obtener VpcId y PublicSubnetId para la plantilla 02
 aws cloudformation describe-stacks \
@@ -175,11 +181,17 @@ aws cloudformation describe-stacks \
 aws cloudformation list-stack-resources \
   --stack-name ec2-sg-eip-stack
 
+# Eliminar stack del template 02
+aws cloudformation delete-stack --stack-name ec2-sg-eip-stack
+
 # Ejemplo template 03 por defecto (AWS genera `RoleName` y `BucketName`)
 aws cloudformation create-stack \
   --stack-name iam-vpc-s3-stack \
   --template-body file://03-iam-role-vpc-s3-bucket.yaml \
   --capabilities CAPABILITY_NAMED_IAM
+
+# Eliminar stack del template 03 por defecto
+aws cloudformation delete-stack --stack-name iam-vpc-s3-stack
 
 # Ejemplo template 03 con nombres personalizados para rol y bucket
 aws cloudformation create-stack \
@@ -188,17 +200,26 @@ aws cloudformation create-stack \
   --parameters ParameterKey=RoleName,ParameterValue="Cris" ParameterKey=BucketName,ParameterValue="mys3-bucket2023" \
   --capabilities CAPABILITY_NAMED_IAM
 
+# Eliminar stack del template 03 con nombres personalizados
+aws cloudformation delete-stack --stack-name iam-vpc-s3-custom-stack
+
 # Ejemplo template 04: IAM User + IAM Group + S3 + VPC + Internet Gateway
 aws cloudformation create-stack \
   --stack-name iam-user-group-vpc-igw-test \
   --template-body file://04-iam-user-group-vpc-internet-gateway.yaml \
   --capabilities CAPABILITY_NAMED_IAM
 
+# Eliminar stack del template 04
+aws cloudformation delete-stack --stack-name iam-user-group-vpc-igw-test
+
 # Ejemplo template 05: IAM Group con permisos de laboratorio + User + S3 + VPC
 aws cloudformation create-stack \
   --stack-name iam-lab-user-vpc-s3-test \
   --template-body file://05-iam-admin-group-user-vpc-s3.yaml \
   --capabilities CAPABILITY_NAMED_IAM
+
+# Eliminar stack del template 05
+aws cloudformation delete-stack --stack-name iam-lab-user-vpc-s3-test
 ```
 
 ### Opción 2 — Consola de AWS
