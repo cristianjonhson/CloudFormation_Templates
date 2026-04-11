@@ -50,6 +50,7 @@ cloudformation/
 Plantilla mínima. Lanza una instancia EC2 `t2.micro` en `us-east-1a`.
 - **Recursos:** `AWS::EC2::Instance`
 - **Parámetros:** `SubnetId`
+- **Estandarización aplicada:** etiqueta `Name` declarativa para la instancia (`cfn-lab-ec2-basic-<stack>`).
 - **Nota:** crea la instancia, pero no configura acceso público, IP pública, Security Group propio ni rutas a Internet.
 
 ### `1.5-public-vpc-subnet-igw-route.yaml`
@@ -57,12 +58,14 @@ Red pública mínima para desplegar instancias EC2 con salida a Internet.
 - **Recursos:** `EC2::VPC`, `EC2::Subnet`, `EC2::InternetGateway`, `EC2::RouteTable`, `EC2::Route`, `EC2::SubnetRouteTableAssociation`
 - **Parámetros:** `VpcCidr`, `PublicSubnetCidr`, `AvailabilityZone`
 - **Outputs:** `VpcId`, `PublicSubnetId`, `InternetGatewayId`, `RouteTableId`
+- **Estandarización aplicada:** etiquetas `Name` declarativas para VPC, subnet pública, IGW y route table.
 
 ### `02-ec2-security-group-elastic-ip.yaml`
 EC2 con dos Security Groups y una Elastic IP asociada. El `SecurityGroupDescription` se recibe como parámetro.
 - **Recursos:** `EC2::Instance`, `EC2::EIP`, `EC2::SecurityGroup` (x2)
 - **Parámetros:** `VpcId`, `SubnetId`, `SecurityGroupDescription`, `AdminCidr`
 - **Outputs:** IP elástica asignada
+- **Estandarización aplicada:** etiquetas `Name` declarativas en EC2, EIP, SG de SSH y SG web.
 - **Prerequisito recomendado:** usar primero `1.5-public-vpc-subnet-igw-route.yaml` para obtener una subnet pública funcional.
 
 ### `2.5-nat-private-subnet.yaml`
@@ -74,14 +77,15 @@ Agrega una subnet privada con salida a Internet a través de NAT Gateway.
 ### `03-iam-role-vpc-s3-bucket.yaml`
 Crea un rol IAM para EC2 con acceso completo a S3, una VPC y un bucket S3 privado.
 - **Recursos:** `IAM::Role`, `EC2::VPC`, `S3::Bucket`
-- **Parámetros:** `RoleName`, `BucketName` (opcionales)
-- **Nota:** si no se envían estos parámetros, CloudFormation genera los nombres automáticamente.
+- **Parámetros:** `IamRoleName`, `S3BucketName` (opcionales)
+- **Nota:** si no se envían estos parámetros, el template usa nombres físicos declarativos por defecto.
 
 ### `3.5-ec2-ssm-no-ssh.yaml`
 Despliega una EC2 administrable por Session Manager sin abrir SSH público.
 - **Recursos:** `IAM::Role`, `IAM::InstanceProfile`, `EC2::SecurityGroup`, `EC2::Instance`
 - **Parámetros:** `VpcId`, `SubnetId`, `LatestAmiId`, `InstanceType`
 - **Outputs:** `InstanceId`, `InstanceProfileName`, `RoleArn`
+- **Estandarización aplicada:** `RoleName` e `InstanceProfileName` declarativos, más etiquetas `Name` para SG y EC2.
 
 ### `04-iam-user-group-vpc-internet-gateway.yaml`
 Infraestructura completa con usuario y grupo IAM, bucket S3 privado, VPC e Internet Gateway. Incluye Outputs para todos los recursos.
@@ -277,7 +281,7 @@ aws cloudformation list-stack-resources \
 aws cloudformation delete-stack --stack-name cfn-lab-ec2-sg-eip
 aws cloudformation wait stack-delete-complete --stack-name cfn-lab-ec2-sg-eip
 
-# Ejemplo template 03 por defecto (AWS genera `RoleName` y `BucketName`)
+# Ejemplo template 03 por defecto (el template aplica nombres declarativos para rol y bucket)
 aws cloudformation create-stack \
   --stack-name cfn-lab-iam-vpc-s3-default \
   --template-body file://03-iam-role-vpc-s3-bucket.yaml \
@@ -409,7 +413,7 @@ aws cloudformation create-stack \
     ParameterKey=VpcId,ParameterValue="$VPC_ID" \
     ParameterKey=SubnetId,ParameterValue="$PRIVATE_SUBNET_ID" \
     ParameterKey=InstanceType,ParameterValue="t2.micro" \
-  --capabilities CAPABILITY_IAM
+  --capabilities CAPABILITY_NAMED_IAM
 aws cloudformation wait stack-create-complete --stack-name cfn-lab-ec2-ssm-private
 
 # Prueba 3.5: validar que la instancia aparece en SSM
@@ -493,9 +497,9 @@ Esta validación local comprueba sintaxis YAML y compatibilidad con las etiqueta
 - El template `02-ec2-security-group-elastic-ip.yaml` ahora restringe SSH por parámetro `AdminCidr`; usa tu IP pública con máscara `/32`.
 - El template `01-ec2-basic.yaml` requiere `SubnetId` si tu cuenta no tiene VPC por defecto.
 - El template `02-ec2-security-group-elastic-ip.yaml` requiere `VpcId` y `SubnetId`; el flujo recomendado es crear primero la red con `1.5-public-vpc-subnet-igw-route.yaml`.
-- El flag `--capabilities CAPABILITY_NAMED_IAM` es obligatorio en los templates que crean recursos IAM, y sigue siendo especialmente relevante si asignas nombres explícitos como `IamRoleName` en `03-iam-role-vpc-s3-bucket.yaml`.
+- El flag `--capabilities CAPABILITY_NAMED_IAM` es obligatorio en los templates que crean recursos IAM cuando existen nombres físicos explícitos (por ejemplo, en `03-iam-role-vpc-s3-bucket.yaml` y `3.5-ec2-ssm-no-ssh.yaml`).
 - El template `01-ec2-basic.yaml` usa una AMI de Amazon Linux obtenida desde SSM Parameter Store para evitar IDs obsoletos.
-- `BucketName` en S3 es opcional; si lo defines, debe ser globalmente único en AWS.
+- `S3BucketName` en S3 es opcional; si lo defines, debe ser globalmente único en AWS.
 - `03-iam-role-vpc-s3-bucket.yaml` usa un bucket privado; si necesitas exponer objetos públicamente, añade una política específica en lugar de abrir el bucket completo.
 - `05-iam-admin-group-user-vpc-s3.yaml` ya no asigna `AdministratorAccess`; usa permisos mínimos de laboratorio para reducir riesgo.
 
