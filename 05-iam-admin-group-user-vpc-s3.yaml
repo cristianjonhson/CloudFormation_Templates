@@ -1,11 +1,11 @@
 # =============================================================
 # Template: 05-iam-admin-group-user-vpc-s3.yaml
-# Descripcion: Configura un usuario administrador de AWS mediante
-#   un grupo IAM con politica AdministratorAccess, lo agrega al
+# Descripcion: Configura un usuario de laboratorio de AWS mediante
+#   un grupo IAM con politica minima declarativa, lo agrega al
 #   grupo, y provisiona un bucket S3 y una VPC base.
 # Recursos creados:
 #   - IAM Group con permisos minimos para laboratorio
-#   - IAM User (AdminUser)
+#   - IAM User (de laboratorio)
 #   - Membresia usuario -> grupo (UserToGroupAddition)
 #   - S3 Bucket
 #   - VPC
@@ -14,12 +14,12 @@ Resources:
 
   # Grupo IAM con politica minima para pruebas de S3 y lectura EC2.
   # Se evita AdministratorAccess para reducir riesgo de privilegios.
-  AdminGroup:
+  IamGroupAdmin:
     Type: AWS::IAM::Group
     Properties:
-      GroupName: AdminGroup
+      GroupName: cfn-lab-iam-group-admin
       Policies:
-        - PolicyName: LimitedLabAccess
+        - PolicyName: cfn-lab-iam-policy-limited-lab
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -49,20 +49,20 @@ Resources:
 
   # Usuario IAM que sera miembro del grupo de administradores.
   # Los permisos se heredan del grupo, no se asignan directamente.
-  AdminUser:
+  IamUserAdmin:
     Type: AWS::IAM::User
     Properties:
-      UserName: AdminUser
+      UserName: cfn-lab-iam-user-admin
 
   # UserToGroupAddition: agrega uno o mas usuarios a un grupo IAM.
   # Este recurso es la forma declarativa de asignar membresia;
   # equivale a: aws iam add-user-to-group.
-  AdminUserGroupMembership:
+  IamUserGroupMembershipAdmin:
     Type: AWS::IAM::UserToGroupAddition
     Properties:
-      GroupName: AdminGroup  # Nombre del grupo destino
+      GroupName: !Ref IamGroupAdmin # Nombre del grupo destino
       Users:
-        - Ref: AdminUser     # Referencia al usuario creado arriba
+        - Ref: IamUserAdmin     # Referencia al usuario creado arriba
 
   # Bucket S3 sin propiedades adicionales: CloudFormation generara
   # un nombre unico automaticamente. Sin AccessControl explicitico,
