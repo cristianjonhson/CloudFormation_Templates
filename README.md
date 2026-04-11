@@ -46,6 +46,7 @@ cloudformation/
 Plantilla mínima. Lanza una instancia EC2 `t2.micro` en `us-east-1a`.
 - **Recursos:** `AWS::EC2::Instance`
 - **Parámetros:** `SubnetId`
+- **Nota:** crea la instancia, pero no configura acceso público, IP pública, Security Group propio ni rutas a Internet.
 
 ### `02-ec2-security-group-elastic-ip.yaml`
 EC2 con dos Security Groups y una Elastic IP asociada. El `SecurityGroupDescription` se recibe como parámetro.
@@ -123,6 +124,10 @@ aws cloudformation create-stack \
   --stack-name ec2-basic-test \
   --template-body file://01-ec2-basic.yaml \
   --parameters ParameterKey=SubnetId,ParameterValue="subnet-xxxxxxxx"
+
+# Esta plantilla solo crea la instancia dentro de la subnet indicada.
+# Si necesitas conectarte desde Internet, usa una subnet publica y configura IP publica,
+# reglas SSH y salida por Internet en tu red, o usa la plantilla 02.
 
 # Si tu cuenta no tiene VPC por defecto, primero crea una subnet en una VPC existente
 aws ec2 create-subnet \
