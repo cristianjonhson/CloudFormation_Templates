@@ -57,11 +57,11 @@ Resources:
 # Util para consultarlos via CLI o referenciarlos en otros stacks
 # usando Fn::ImportValue (cross-stack references).
 Outputs:
-  IamUserId:
+  IamUserName:
     Value: !Ref IamUserLab
     Description: IAM User
 
-  IamGroupId:
+  IamGroupName:
     Value: !Ref IamGroupLab
     Description: IAM Group
 
