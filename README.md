@@ -292,7 +292,7 @@ aws cloudformation wait stack-delete-complete --stack-name cfn-lab-iam-vpc-s3-de
 aws cloudformation create-stack \
   --stack-name cfn-lab-iam-vpc-s3-custom-names \
   --template-body file://03-iam-role-vpc-s3-bucket.yaml \
-  --parameters ParameterKey=RoleName,ParameterValue="Cris" ParameterKey=BucketName,ParameterValue="mys3-bucket2023" \
+  --parameters ParameterKey=IamRoleName,ParameterValue="cfn-lab-iam-role-cris" ParameterKey=S3BucketName,ParameterValue="cfn-lab-s3-bucket-cris-2026" \
   --capabilities CAPABILITY_NAMED_IAM
 aws cloudformation wait stack-create-complete --stack-name cfn-lab-iam-vpc-s3-custom-names
 
@@ -493,7 +493,7 @@ Esta validación local comprueba sintaxis YAML y compatibilidad con las etiqueta
 - El template `02-ec2-security-group-elastic-ip.yaml` ahora restringe SSH por parámetro `AdminCidr`; usa tu IP pública con máscara `/32`.
 - El template `01-ec2-basic.yaml` requiere `SubnetId` si tu cuenta no tiene VPC por defecto.
 - El template `02-ec2-security-group-elastic-ip.yaml` requiere `VpcId` y `SubnetId`; el flujo recomendado es crear primero la red con `1.5-public-vpc-subnet-igw-route.yaml`.
-- El flag `--capabilities CAPABILITY_NAMED_IAM` es obligatorio en los templates que crean recursos IAM, y sigue siendo especialmente relevante si asignas nombres explícitos como `RoleName` en `03-iam-role-vpc-s3-bucket.yaml`.
+- El flag `--capabilities CAPABILITY_NAMED_IAM` es obligatorio en los templates que crean recursos IAM, y sigue siendo especialmente relevante si asignas nombres explícitos como `IamRoleName` en `03-iam-role-vpc-s3-bucket.yaml`.
 - El template `01-ec2-basic.yaml` usa una AMI de Amazon Linux obtenida desde SSM Parameter Store para evitar IDs obsoletos.
 - `BucketName` en S3 es opcional; si lo defines, debe ser globalmente único en AWS.
 - `03-iam-role-vpc-s3-bucket.yaml` usa un bucket privado; si necesitas exponer objetos públicamente, añade una política específica en lugar de abrir el bucket completo.
