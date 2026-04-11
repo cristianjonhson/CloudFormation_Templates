@@ -160,6 +160,24 @@ aws cloudformation list-stacks --profile cristianjonhson
 export AWS_PROFILE=cristianjonhson
 ```
 
+### Convención de Nombres (Estándar del Laboratorio)
+
+| Elemento | Convención | Ejemplo | Nota |
+|---|---|---|---|
+| Stack name | `cfn-lab-<dominio>-<servicio>-<alcance>` | `cfn-lab-network-public-base` | Se usa en `--stack-name` para crear, esperar y eliminar stacks. |
+| Logical ID (CloudFormation) | `PascalCase` por tipo y propósito | `Ec2InstanceSsmManaged`, `RouteTablePublic` | Identificador interno del template; debe ser estable para evitar reemplazos no deseados. |
+| Nombre físico explícito | Prefijo `cfn-lab-` + servicio + contexto | `cfn-lab-alb-web`, `cfn-lab-iam-group-admin` | Aplica en propiedades como `Name`, `RoleName`, `InstanceProfileName`, `GroupName`, `UserName`, `BucketName`. |
+| Tag Name | `cfn-lab-<recurso>-${AWS::StackName}` | `cfn-lab-ec2-basic-${AWS::StackName}` | Facilita trazabilidad del recurso en consola y costos. |
+| Nombre único global (S3) | `cfn-lab-...-${AWS::AccountId}-${AWS::Region}` | `cfn-lab-s3-bucket-ec2-s3-${AWS::AccountId}-${AWS::Region}` | Evita colisiones globales de nombre en buckets S3. |
+
+Reglas rápidas:
+
+1. Mantener siempre el prefijo `cfn-lab-`.
+2. Evitar nombres genéricos (`my-user`, `my-group`, `lab-alb`) en recursos físicos.
+3. Incluir `${AWS::StackName}` en tags `Name` cuando aplique.
+4. Para S3, incluir `${AWS::AccountId}` y `${AWS::Region}` si se define nombre físico.
+5. Si un template crea IAM con nombres físicos explícitos, usar `CAPABILITY_NAMED_IAM`.
+
 ---
 
 ## 🚀 Cómo Desplegar
