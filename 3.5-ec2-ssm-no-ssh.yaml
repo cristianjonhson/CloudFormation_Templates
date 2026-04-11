@@ -85,14 +85,14 @@ Resources:
           Value: !Sub cfn-lab-ec2-ssm-managed-${AWS::StackName}
 
 Outputs:
-  InstanceId:
+  Ec2InstanceId:
     Description: ID de la instancia EC2 administrable por SSM
     Value: !Ref Ec2InstanceSsmManaged
 
-  InstanceProfileName:
+  IamInstanceProfileName:
     Description: Nombre del instance profile asociado
     Value: !Ref IamInstanceProfileSsm
 
-  RoleArn:
+  IamRoleArn:
     Description: ARN del rol IAM usado por la instancia
     Value: !GetAtt IamRoleSsmInstance.Arn
