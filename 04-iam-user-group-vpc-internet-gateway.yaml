@@ -18,7 +18,7 @@ Resources:
   IamUserLab:
     Type: AWS::IAM::User
     Properties:
-      UserName: my-user
+      UserName: cfn-lab-iam-user-basic
 
   # Grupo IAM para organizar usuarios y asignarles permisos
   # de forma centralizada. Es una buena practica gestionar
@@ -26,14 +26,14 @@ Resources:
   IamGroupLab:
     Type: AWS::IAM::Group
     Properties:
-      GroupName: my-group
+      GroupName: cfn-lab-iam-group-basic
 
   # Bucket S3 privado: AccessControl: Private significa que
   # solo el propietario tiene acceso. Ideal para datos internos.
   S3BucketLab:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: my-unique-bucket
+      BucketName: !Sub cfn-lab-s3-bucket-basic-${AWS::AccountId}-${AWS::Region}
       AccessControl: Private
 
   # VPC: red virtual privada e isolada para los recursos.
