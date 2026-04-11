@@ -57,6 +57,9 @@ Resources:
       SecurityGroupIds:
         - !Ref SshSecurityGroup # Permite SSH desde cualquier IP
         - !Ref WebSecurityGroup # Permite HTTP y SSH restringido
+      Tags:
+        - Key: Name
+          Value: !Sub cfn-lab-ec2-sg-eip-${AWS::StackName}
 
   # Elastic IP: IP publica estatica que no cambia al reiniciar la instancia.
   # Sin EIP, la IP publica de EC2 cambia cada vez que se para y se inicia.
@@ -64,6 +67,9 @@ Resources:
     Type: AWS::EC2::EIP
     Properties:
       Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub cfn-lab-eip-ec2-${AWS::StackName}
 
   # Asociacion explicita de la Elastic IP a la instancia dentro de la VPC.
   ElasticIpAssociation:
@@ -79,6 +85,9 @@ Resources:
     Properties:
       VpcId: !Ref VpcId
       GroupDescription: Habilita el acceso SSH a traves del puerto 22
+      Tags:
+      - Key: Name
+        Value: !Sub cfn-lab-sg-ssh-${AWS::StackName}
       SecurityGroupIngress:
       - CidrIp: !Ref AdminCidr # CIDR autorizado para acceso SSH administrativo
         FromPort: 22
@@ -94,6 +103,9 @@ Resources:
     Properties:
       VpcId: !Ref VpcId
       GroupDescription: !Ref SecurityGroupDescription # Descripcion personalizada via parametro
+      Tags:
+      - Key: Name
+        Value: !Sub cfn-lab-sg-web-${AWS::StackName}
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 80
