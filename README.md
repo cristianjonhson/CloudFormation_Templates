@@ -84,7 +84,7 @@ Crea un rol IAM para EC2 con acceso completo a S3, una VPC y un bucket S3 privad
 Despliega una EC2 administrable por Session Manager sin abrir SSH público.
 - **Recursos:** `IAM::Role`, `IAM::InstanceProfile`, `EC2::SecurityGroup`, `EC2::Instance`
 - **Parámetros:** `VpcId`, `SubnetId`, `LatestAmiId`, `InstanceType`
-- **Outputs:** `InstanceId`, `InstanceProfileName`, `RoleArn`
+- **Outputs:** `Ec2InstanceId`, `IamInstanceProfileName`, `IamRoleArn`
 - **Estandarización aplicada:** `RoleName` e `InstanceProfileName` declarativos, más etiquetas `Name` para SG y EC2.
 
 ### `04-iam-user-group-vpc-internet-gateway.yaml`
@@ -95,7 +95,7 @@ Infraestructura completa con usuario y grupo IAM, bucket S3 privado, VPC e Inter
 Despliega una capa web escalable con ALB y Auto Scaling Group.
 - **Recursos:** `ELBv2::LoadBalancer`, `ELBv2::TargetGroup`, `ELBv2::Listener`, `EC2::LaunchTemplate`, `AutoScaling::AutoScalingGroup`
 - **Parámetros:** `VpcId`, `PublicSubnetA`, `PublicSubnetB`, `LatestAmiId`, `InstanceType`, `DesiredCapacity`, `MinSize`, `MaxSize`
-- **Outputs:** `LoadBalancerDNS`, `TargetGroupArn`
+- **Outputs:** `LoadBalancerDnsName`, `AlbTargetGroupArn`
 
 ### `05-iam-admin-group-user-vpc-s3.yaml`
 Grupo IAM con política mínima de laboratorio, usuario IAM, membresía al grupo, bucket S3 y VPC.
@@ -288,7 +288,7 @@ aws cloudformation wait stack-create-complete \
 # Obtener directamente la Elastic IP desde los outputs del stack
 aws cloudformation describe-stacks \
   --stack-name cfn-lab-ec2-sg-eip \
-  --query "Stacks[0].Outputs[?OutputKey=='ElasticIP'].OutputValue" \
+  --query "Stacks[0].Outputs[?OutputKey=='ElasticIp'].OutputValue" \
   --output text
 
 # Listar todos los recursos creados por el stack
@@ -435,7 +435,7 @@ aws cloudformation create-stack \
 aws cloudformation wait stack-create-complete --stack-name cfn-lab-ec2-ssm-private
 
 # Prueba 3.5: validar que la instancia aparece en SSM
-INSTANCE_ID=$(aws cloudformation describe-stacks --stack-name cfn-lab-ec2-ssm-private --query "Stacks[0].Outputs[?OutputKey=='InstanceId'].OutputValue" --output text)
+INSTANCE_ID=$(aws cloudformation describe-stacks --stack-name cfn-lab-ec2-ssm-private --query "Stacks[0].Outputs[?OutputKey=='Ec2InstanceId'].OutputValue" --output text)
 aws ssm describe-instance-information --filters "Key=InstanceIds,Values=$INSTANCE_ID" --query 'InstanceInformationList[0].PingStatus' --output text
 
 # 4) Desplegar 4.5 (ALB + Auto Scaling)
@@ -449,7 +449,7 @@ aws cloudformation create-stack \
 aws cloudformation wait stack-create-complete --stack-name cfn-lab-alb-asg-web
 
 # Prueba 4.5: obtener DNS del ALB y probar respuesta HTTP
-ALB_DNS=$(aws cloudformation describe-stacks --stack-name cfn-lab-alb-asg-web --query "Stacks[0].Outputs[?OutputKey=='LoadBalancerDNS'].OutputValue" --output text)
+ALB_DNS=$(aws cloudformation describe-stacks --stack-name cfn-lab-alb-asg-web --query "Stacks[0].Outputs[?OutputKey=='LoadBalancerDnsName'].OutputValue" --output text)
 curl "http://$ALB_DNS"
 ```
 
