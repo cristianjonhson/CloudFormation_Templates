@@ -45,6 +45,7 @@ cloudformation/
 ### `01-ec2-basic.yaml`
 Plantilla mínima. Lanza una instancia EC2 `t2.micro` en `us-east-1a`.
 - **Recursos:** `AWS::EC2::Instance`
+- **Parámetros:** `SubnetId`
 
 ### `02-ec2-security-group-elastic-ip.yaml`
 EC2 con dos Security Groups y una Elastic IP asociada. El `SecurityGroupDescription` se recibe como parámetro.
@@ -120,7 +121,8 @@ aws cloudformation create-stack \
 # Ejemplo template 01: EC2 básica
 aws cloudformation create-stack \
   --stack-name ec2-basic-test \
-  --template-body file://01-ec2-basic.yaml
+  --template-body file://01-ec2-basic.yaml \
+  --parameters ParameterKey=SubnetId,ParameterValue="subnet-xxxxxxxx"
 
 # Ejemplo template 02: EC2 + Security Groups + Elastic IP
 aws cloudformation create-stack \
@@ -217,9 +219,10 @@ Esta validación local comprueba sintaxis YAML y compatibilidad con las etiqueta
 ## ⚠️ Consideraciones Importantes
 
 - El template `02-ec2-security-group-elastic-ip.yaml` ahora restringe SSH por parámetro `AdminCidr`; usa tu IP pública con máscara `/32`.
+- El template `01-ec2-basic.yaml` requiere `SubnetId` si tu cuenta no tiene VPC por defecto.
 - El template `02-ec2-security-group-elastic-ip.yaml` requiere `VpcId` y `SubnetId` si tu cuenta no tiene VPC por defecto.
 - El flag `--capabilities CAPABILITY_NAMED_IAM` es obligatorio en los templates que crean recursos IAM, y sigue siendo especialmente relevante si asignas nombres explícitos como `RoleName` en `03-iam-role-vpc-s3-bucket.yaml`.
-- El template `01-ec2-basic.yaml` usa por defecto `ami-a4c7edb2`, y permite sobreescribir `AmiId` para otras regiones o AMIs equivalentes.
+- El template `01-ec2-basic.yaml` usa una AMI de Amazon Linux obtenida desde SSM Parameter Store para evitar IDs obsoletos.
 - `BucketName` en S3 es opcional; si lo defines, debe ser globalmente único en AWS.
 - `03-iam-role-vpc-s3-bucket.yaml` usa un bucket privado; si necesitas exponer objetos públicamente, añade una política específica en lugar de abrir el bucket completo.
 - `05-iam-admin-group-user-vpc-s3.yaml` ya no asigna `AdministratorAccess`; usa permisos mínimos de laboratorio para reducir riesgo.
