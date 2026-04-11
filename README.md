@@ -124,6 +124,20 @@ aws cloudformation create-stack \
   --template-body file://01-ec2-basic.yaml \
   --parameters ParameterKey=SubnetId,ParameterValue="subnet-xxxxxxxx"
 
+# Si tu cuenta no tiene VPC por defecto, primero crea una subnet en una VPC existente
+aws ec2 create-subnet \
+  --vpc-id vpc-0b4e4528697707d95 \
+  --cidr-block 172.31.1.0/24 \
+  --availability-zone us-east-1a \
+  --query 'Subnet.SubnetId' \
+  --output text
+
+# Luego relanza la plantilla 01 con el SubnetId devuelto
+aws cloudformation create-stack \
+  --stack-name ec2-basic-test \
+  --template-body file://01-ec2-basic.yaml \
+  --parameters ParameterKey=SubnetId,ParameterValue="subnet-xxxxxxxx"
+
 # Ejemplo template 02: EC2 + Security Groups + Elastic IP
 aws cloudformation create-stack \
   --stack-name ec2-sg-eip-stack \
