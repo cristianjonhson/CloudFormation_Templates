@@ -143,6 +143,46 @@ aws cloudformation create-stack \
   --template-body file://01-ec2-basic.yaml \
   --parameters ParameterKey=SubnetId,ParameterValue="subnet-xxxxxxxx"
 
+# Si quieres usar la plantilla 02 con acceso publico, primero prepara la red.
+
+# 1. Crear una Internet Gateway
+aws ec2 create-internet-gateway \
+  --region us-east-1 \
+  --query 'InternetGateway.InternetGatewayId' \
+  --output text
+
+# 2. Adjuntarla a tu VPC
+aws ec2 attach-internet-gateway \
+  --internet-gateway-id igw-xxxxxxxx \
+  --vpc-id vpc-xxxxxxxx \
+  --region us-east-1
+
+# 3. Crear una route table
+aws ec2 create-route-table \
+  --vpc-id vpc-xxxxxxxx \
+  --region us-east-1 \
+  --query 'RouteTable.RouteTableId' \
+  --output text
+
+# 4. Crear la ruta por defecto hacia Internet
+aws ec2 create-route \
+  --route-table-id rtb-xxxxxxxx \
+  --destination-cidr-block 0.0.0.0/0 \
+  --gateway-id igw-xxxxxxxx \
+  --region us-east-1
+
+# 5. Asociar la route table a la subnet
+aws ec2 associate-route-table \
+  --route-table-id rtb-xxxxxxxx \
+  --subnet-id subnet-xxxxxxxx \
+  --region us-east-1
+
+# 6. Hacer que la subnet asigne IP publica automaticamente
+aws ec2 modify-subnet-attribute \
+  --subnet-id subnet-xxxxxxxx \
+  --map-public-ip-on-launch \
+  --region us-east-1
+
 # Ejemplo template 02: EC2 + Security Groups + Elastic IP
 aws cloudformation create-stack \
   --stack-name ec2-sg-eip-stack \
@@ -154,6 +194,7 @@ aws cloudformation create-stack \
     ParameterKey=AdminCidr,ParameterValue="203.0.113.10/32"
 
 # Reemplaza `vpc-xxxxxxxx` y `subnet-xxxxxxxx` por una VPC y subnet reales de tu cuenta.
+# Reemplaza `igw-xxxxxxxx` y `rtb-xxxxxxxx` por los IDs que te devuelvan los comandos anteriores.
 # Reemplaza `203.0.113.10/32` por tu IP pública real con máscara /32.
 
 # Ejemplo template 03 por defecto (AWS genera `RoleName` y `BucketName`)
