@@ -2,15 +2,22 @@
 # Template: 01-ec2-basic.yaml
 # Descripcion: Template minimo que lanza una unica instancia EC2.
 #   Es el punto de partida para aprender CloudFormation.
+# Parametros requeridos:
+#   - SubnetId: subnet donde se lanzara la instancia.
+#   - LatestAmiId: AMI dinamica de Amazon Linux obtenida de SSM Parameter Store.
 # Recursos creados:
 #   - EC2 Instance (t2.micro)
 # =============================================================
 ---
 
-# Parametro SSM para obtener una AMI vigente sin hardcodear IDs
-# que pueden quedar obsoletos o no existir en otra region.
+# Parametros del template.
 Parameters:
+  SubnetId:
+    Description: ID de la subnet donde se lanzara la instancia EC2
+    Type: AWS::EC2::Subnet::Id
+
   LatestAmiId:
+    Description: AMI dinamica de Amazon Linux via SSM Parameter Store
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
 
@@ -23,6 +30,6 @@ Resources:
   MyInstance:
     Type: AWS::EC2::Instance
     Properties:
-      AvailabilityZone: us-east-1a
+      SubnetId: !Ref SubnetId
       ImageId: !Ref LatestAmiId # AMI dinamica obtenida del parametro SSM
       InstanceType: t2.micro
