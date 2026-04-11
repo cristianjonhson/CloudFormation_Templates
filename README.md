@@ -29,6 +29,7 @@ Este proyecto es un conjunto de plantillas de **Infrastructure as Code (IaC)** e
 ```
 cloudformation/
 ├── 01-ec2-basic.yaml                          # EC2 básico (nivel inicial)
+├── 1.5-public-vpc-subnet-igw-route.yaml       # Red publica base para instancias accesibles
 ├── 02-ec2-security-group-elastic-ip.yaml      # EC2 con Security Groups e IP elástica
 ├── 03-iam-role-vpc-s3-bucket.yaml             # IAM Role + VPC + S3 Bucket privado
 ├── 04-iam-user-group-vpc-internet-gateway.yaml # IAM User/Group + S3 + VPC + Internet Gateway
@@ -48,11 +49,18 @@ Plantilla mínima. Lanza una instancia EC2 `t2.micro` en `us-east-1a`.
 - **Parámetros:** `SubnetId`
 - **Nota:** crea la instancia, pero no configura acceso público, IP pública, Security Group propio ni rutas a Internet.
 
+### `1.5-public-vpc-subnet-igw-route.yaml`
+Red pública mínima para desplegar instancias EC2 con salida a Internet.
+- **Recursos:** `EC2::VPC`, `EC2::Subnet`, `EC2::InternetGateway`, `EC2::RouteTable`, `EC2::Route`, `EC2::SubnetRouteTableAssociation`
+- **Parámetros:** `VpcCidr`, `PublicSubnetCidr`, `AvailabilityZone`
+- **Outputs:** `VpcId`, `PublicSubnetId`, `InternetGatewayId`, `RouteTableId`
+
 ### `02-ec2-security-group-elastic-ip.yaml`
 EC2 con dos Security Groups y una Elastic IP asociada. El `SecurityGroupDescription` se recibe como parámetro.
 - **Recursos:** `EC2::Instance`, `EC2::EIP`, `EC2::SecurityGroup` (x2)
 - **Parámetros:** `VpcId`, `SubnetId`, `SecurityGroupDescription`, `AdminCidr`
 - **Outputs:** IP elástica asignada
+- **Prerequisito recomendado:** usar primero `1.5-public-vpc-subnet-igw-route.yaml` para obtener una subnet pública funcional.
 
 ### `03-iam-role-vpc-s3-bucket.yaml`
 Crea un rol IAM para EC2 con acceso completo a S3, una VPC y un bucket S3 privado.
@@ -129,59 +137,16 @@ aws cloudformation create-stack \
 # Si necesitas conectarte desde Internet, usa una subnet publica y configura IP publica,
 # reglas SSH y salida por Internet en tu red, o usa la plantilla 02.
 
-# Si tu cuenta no tiene VPC por defecto, primero crea una subnet en una VPC existente
-aws ec2 create-subnet \
-  --vpc-id vpc-0b4e4528697707d95 \
-  --cidr-block 172.31.1.0/24 \
-  --availability-zone us-east-1a \
-  --query 'Subnet.SubnetId' \
-  --output text
-
-# Luego relanza la plantilla 01 con el SubnetId devuelto
+# Ejemplo template 1.5: crear VPC + subnet publica + Internet Gateway + ruta publica
 aws cloudformation create-stack \
-  --stack-name ec2-basic-test \
-  --template-body file://01-ec2-basic.yaml \
-  --parameters ParameterKey=SubnetId,ParameterValue="subnet-xxxxxxxx"
+  --stack-name public-network-base \
+  --template-body file://1.5-public-vpc-subnet-igw-route.yaml
 
-# Si quieres usar la plantilla 02 con acceso publico, primero prepara la red.
-
-# 1. Crear una Internet Gateway
-aws ec2 create-internet-gateway \
-  --region us-east-1 \
-  --query 'InternetGateway.InternetGatewayId' \
-  --output text
-
-# 2. Adjuntarla a tu VPC
-aws ec2 attach-internet-gateway \
-  --internet-gateway-id igw-xxxxxxxx \
-  --vpc-id vpc-xxxxxxxx \
-  --region us-east-1
-
-# 3. Crear una route table
-aws ec2 create-route-table \
-  --vpc-id vpc-xxxxxxxx \
-  --region us-east-1 \
-  --query 'RouteTable.RouteTableId' \
-  --output text
-
-# 4. Crear la ruta por defecto hacia Internet
-aws ec2 create-route \
-  --route-table-id rtb-xxxxxxxx \
-  --destination-cidr-block 0.0.0.0/0 \
-  --gateway-id igw-xxxxxxxx \
-  --region us-east-1
-
-# 5. Asociar la route table a la subnet
-aws ec2 associate-route-table \
-  --route-table-id rtb-xxxxxxxx \
-  --subnet-id subnet-xxxxxxxx \
-  --region us-east-1
-
-# 6. Hacer que la subnet asigne IP publica automaticamente
-aws ec2 modify-subnet-attribute \
-  --subnet-id subnet-xxxxxxxx \
-  --map-public-ip-on-launch \
-  --region us-east-1
+# Consulta los outputs para obtener VpcId y PublicSubnetId para la plantilla 02
+aws cloudformation describe-stacks \
+  --stack-name public-network-base \
+  --query 'Stacks[0].Outputs[*].[OutputKey,OutputValue]' \
+  --output table
 
 # Ejemplo template 02: EC2 + Security Groups + Elastic IP
 aws cloudformation create-stack \
@@ -194,7 +159,6 @@ aws cloudformation create-stack \
     ParameterKey=AdminCidr,ParameterValue="203.0.113.10/32"
 
 # Reemplaza `vpc-xxxxxxxx` y `subnet-xxxxxxxx` por una VPC y subnet reales de tu cuenta.
-# Reemplaza `igw-xxxxxxxx` y `rtb-xxxxxxxx` por los IDs que te devuelvan los comandos anteriores.
 # Reemplaza `203.0.113.10/32` por tu IP pública real con máscara /32.
 
 # Ejemplo template 03 por defecto (AWS genera `RoleName` y `BucketName`)
@@ -245,6 +209,10 @@ aws cloudformation update-stack \
 aws cloudformation delete-stack --stack-name <nombre-del-stack>
 ```
 
+### Alternativa Manual Para Red Pública
+
+Si no quieres usar `1.5-public-vpc-subnet-igw-route.yaml`, puedes preparar la red manualmente con AWS CLI creando Internet Gateway, route table, asociación de subnet y habilitando IP pública en la subnet.
+
 ---
 
 ## 🔍 Validar un Template
@@ -280,7 +248,7 @@ Esta validación local comprueba sintaxis YAML y compatibilidad con las etiqueta
 
 - El template `02-ec2-security-group-elastic-ip.yaml` ahora restringe SSH por parámetro `AdminCidr`; usa tu IP pública con máscara `/32`.
 - El template `01-ec2-basic.yaml` requiere `SubnetId` si tu cuenta no tiene VPC por defecto.
-- El template `02-ec2-security-group-elastic-ip.yaml` requiere `VpcId` y `SubnetId` si tu cuenta no tiene VPC por defecto.
+- El template `02-ec2-security-group-elastic-ip.yaml` requiere `VpcId` y `SubnetId`; el flujo recomendado es crear primero la red con `1.5-public-vpc-subnet-igw-route.yaml`.
 - El flag `--capabilities CAPABILITY_NAMED_IAM` es obligatorio en los templates que crean recursos IAM, y sigue siendo especialmente relevante si asignas nombres explícitos como `RoleName` en `03-iam-role-vpc-s3-bucket.yaml`.
 - El template `01-ec2-basic.yaml` usa una AMI de Amazon Linux obtenida desde SSM Parameter Store para evitar IDs obsoletos.
 - `BucketName` en S3 es opcional; si lo defines, debe ser globalmente único en AWS.
@@ -294,6 +262,8 @@ Esta validación local comprueba sintaxis YAML y compatibilidad con las etiqueta
 ```
 01-ec2-basic.yaml
        ↓
+1.5-public-vpc-subnet-igw-route.yaml
+  ↓
 02-ec2-security-group-elastic-ip.yaml
        ↓
 04-iam-user-group-vpc-internet-gateway.yaml
