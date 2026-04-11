@@ -14,21 +14,21 @@ Parameters:
 
   # Nombre opcional para el rol IAM.
   # Si se deja vacio, CloudFormation genera un nombre unico.
-  RoleName:
+  IamRoleName:
     Type: String
     Default: ''
     Description: Nombre opcional para el rol IAM
 
   # Nombre opcional para el bucket S3.
   # Si se deja vacio, CloudFormation genera un nombre unico.
-  BucketName:
+  S3BucketName:
     Type: String
     Default: ''
     Description: Nombre opcional para el bucket S3
 
 Conditions:
-  UseCustomRoleName: !Not [!Equals [!Ref RoleName, '']]
-  UseCustomBucketName: !Not [!Equals [!Ref BucketName, '']]
+  UseCustomRoleName: !Not [!Equals [!Ref IamRoleName, '']]
+  UseCustomBucketName: !Not [!Equals [!Ref S3BucketName, '']]
 
 Resources:
 
@@ -37,12 +37,12 @@ Resources:
   #   (en este caso, el servicio ec2.amazonaws.com).
   # ManagedPolicyArns: adjunta la politica gestionada de AWS
   #   AmazonS3FullAccess que da acceso total a S3.
-  # RoleName: se asigna solo si el parametro no esta vacio, sino se omite para que CloudFormation genere un nombre unico.
+  # RoleName: si no se envia IamRoleName, se usa un nombre declarativo por defecto.
   # Es buena practica no hardcodear nombres de recursos a menos que sea necesario, para evitar conflictos y facilitar despliegues repetidos.
   IamRoleEc2S3:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !If [UseCustomRoleName, !Ref RoleName, !Ref 'AWS::NoValue']
+      RoleName: !If [UseCustomRoleName, !Ref IamRoleName, !Sub 'cfn-lab-iam-role-ec2-s3-${AWS::AccountId}']
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -65,9 +65,10 @@ Resources:
 
   # Bucket S3 privado para evitar exposicion publica no intencional.
   # AccessControl: Private significa que solo el propietario tiene acceso.
-  # El nombre del bucket se asigna solo si el parametro no esta vacio, sino se omite para que CloudFormation genere un nombre unico.
+  # El nombre del bucket se asigna solo si el parametro no esta vacio;
+  # en caso contrario, se usa un nombre declarativo unico por cuenta y region.
   S3BucketPrivate:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !If [UseCustomBucketName, !Ref BucketName, !Ref 'AWS::NoValue']
+      BucketName: !If [UseCustomBucketName, !Ref S3BucketName, !Sub 'cfn-lab-s3-bucket-ec2-s3-${AWS::AccountId}-${AWS::Region}']
       AccessControl: Private
