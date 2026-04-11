@@ -210,6 +210,66 @@ aws cloudformation list-stack-resources \
 aws cloudformation delete-stack --stack-name ec2-sg-eip-stack
 aws cloudformation wait stack-delete-complete --stack-name ec2-sg-eip-stack
 
+> Prerrequisito: tener creado el stack `public-network-base` con `1.5-public-vpc-subnet-igw-route.yaml`.
+
+```bash
+# 0) Tomar datos de red del stack 1.5
+VPC_ID=$(aws cloudformation describe-stacks --stack-name public-network-base --query "Stacks[0].Outputs[?OutputKey=='VpcId'].OutputValue" --output text)
+PUBLIC_SUBNET_A=$(aws cloudformation describe-stacks --stack-name public-network-base --query "Stacks[0].Outputs[?OutputKey=='PublicSubnetId'].OutputValue" --output text)
+PUBLIC_RT=$(aws cloudformation describe-stacks --stack-name public-network-base --query "Stacks[0].Outputs[?OutputKey=='RouteTableId'].OutputValue" --output text)
+
+# 1) Crear una segunda subnet publica para 4.5 (ALB necesita dos subnets)
+PUBLIC_SUBNET_B=$(aws ec2 create-subnet \
+  --vpc-id "$VPC_ID" \
+  --cidr-block 10.0.3.0/24 \
+  --availability-zone us-east-1b \
+  --query 'Subnet.SubnetId' \
+  --output text)
+
+aws ec2 associate-route-table --route-table-id "$PUBLIC_RT" --subnet-id "$PUBLIC_SUBNET_B"
+aws ec2 modify-subnet-attribute --subnet-id "$PUBLIC_SUBNET_B" --map-public-ip-on-launch
+
+# 2) Desplegar 2.5 (NAT + subnet privada)
+aws cloudformation create-stack \
+  --stack-name nat-private-subnet-test \
+  --template-body file://2.5-nat-private-subnet.yaml \
+  --parameters \
+    ParameterKey=VpcId,ParameterValue="$VPC_ID" \
+    ParameterKey=PublicSubnetId,ParameterValue="$PUBLIC_SUBNET_A"
+aws cloudformation wait stack-create-complete --stack-name nat-private-subnet-test
+
+# 3) Desplegar 3.5 (EC2 administrable por SSM sin SSH)
+PRIVATE_SUBNET_ID=$(aws cloudformation describe-stacks --stack-name nat-private-subnet-test --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnetId'].OutputValue" --output text)
+
+aws cloudformation create-stack \
+  --stack-name ec2-ssm-no-ssh-test \
+  --template-body file://3.5-ec2-ssm-no-ssh.yaml \
+  --parameters \
+    ParameterKey=VpcId,ParameterValue="$VPC_ID" \
+    ParameterKey=SubnetId,ParameterValue="$PRIVATE_SUBNET_ID" \
+    ParameterKey=InstanceType,ParameterValue="t2.micro" \
+  --capabilities CAPABILITY_IAM
+aws cloudformation wait stack-create-complete --stack-name ec2-ssm-no-ssh-test
+
+# Prueba 3.5: validar que la instancia aparece en SSM
+INSTANCE_ID=$(aws cloudformation describe-stacks --stack-name ec2-ssm-no-ssh-test --query "Stacks[0].Outputs[?OutputKey=='InstanceId'].OutputValue" --output text)
+aws ssm describe-instance-information --filters "Key=InstanceIds,Values=$INSTANCE_ID" --query 'InstanceInformationList[0].PingStatus' --output text
+
+# 4) Desplegar 4.5 (ALB + Auto Scaling)
+aws cloudformation create-stack \
+  --stack-name alb-asg-test \
+  --template-body file://4.5-alb-auto-scaling.yaml \
+  --parameters \
+    ParameterKey=VpcId,ParameterValue="$VPC_ID" \
+    ParameterKey=PublicSubnetA,ParameterValue="$PUBLIC_SUBNET_A" \
+    ParameterKey=PublicSubnetB,ParameterValue="$PUBLIC_SUBNET_B"
+aws cloudformation wait stack-create-complete --stack-name alb-asg-test
+
+# Prueba 4.5: obtener DNS del ALB y probar respuesta HTTP
+ALB_DNS=$(aws cloudformation describe-stacks --stack-name alb-asg-test --query "Stacks[0].Outputs[?OutputKey=='LoadBalancerDNS'].OutputValue" --output text)
+curl "http://$ALB_DNS"
+```
+
 # Ejemplo template 03 por defecto (AWS genera `RoleName` y `BucketName`)
 aws cloudformation create-stack \
   --stack-name iam-vpc-s3-stack \
@@ -380,6 +440,12 @@ Esta validación local comprueba sintaxis YAML y compatibilidad con las etiqueta
   ↓
 02-ec2-security-group-elastic-ip.yaml
        ↓
+2.5-nat-private-subnet.yaml
+  ↓
+3.5-ec2-ssm-no-ssh.yaml
+  ↓
+4.5-alb-auto-scaling.yaml
+  ↓
 04-iam-user-group-vpc-internet-gateway.yaml
        ↓
 05-iam-admin-group-user-vpc-s3.yaml
