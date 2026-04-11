@@ -161,6 +161,20 @@ aws cloudformation create-stack \
 # Reemplaza `vpc-xxxxxxxx` y `subnet-xxxxxxxx` por una VPC y subnet reales de tu cuenta.
 # Reemplaza `203.0.113.10/32` por tu IP pública real con máscara /32.
 
+# Esperar a que termine la creación del stack
+aws cloudformation wait stack-create-complete \
+  --stack-name ec2-sg-eip-stack
+
+# Obtener directamente la Elastic IP desde los outputs del stack
+aws cloudformation describe-stacks \
+  --stack-name ec2-sg-eip-stack \
+  --query "Stacks[0].Outputs[?OutputKey=='ElasticIP'].OutputValue" \
+  --output text
+
+# Listar todos los recursos creados por el stack
+aws cloudformation list-stack-resources \
+  --stack-name ec2-sg-eip-stack
+
 # Ejemplo template 03 por defecto (AWS genera `RoleName` y `BucketName`)
 aws cloudformation create-stack \
   --stack-name iam-vpc-s3-stack \
