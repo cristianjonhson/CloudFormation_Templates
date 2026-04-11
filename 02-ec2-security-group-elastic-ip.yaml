@@ -119,6 +119,6 @@ Resources:
 # Outputs exponen valores del stack para consultarlos luego
 # via consola, CLI o para pasarlos a otros stacks.
 Outputs:
-  ElasticIP:
+  ElasticIp:
     Description: Valor de la IP elastica
     Value: !Ref ElasticIp # Ref al recurso EIP devuelve la IP publica asignada a la instancia
