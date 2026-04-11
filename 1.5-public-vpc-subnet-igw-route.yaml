@@ -41,6 +41,9 @@ Resources:
       CidrBlock: !Ref VpcCidr
       EnableDnsSupport: true
       EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub cfn-lab-vpc-public-${AWS::StackName}
 
   SubnetPublic:
     Type: AWS::EC2::Subnet
@@ -49,9 +52,16 @@ Resources:
       CidrBlock: !Ref PublicSubnetCidr
       AvailabilityZone: !Ref AvailabilityZone
       MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub cfn-lab-subnet-public-${AWS::StackName}
 
   InternetGatewayPublic:
     Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub cfn-lab-igw-public-${AWS::StackName}
 
   VpcInternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -63,6 +73,9 @@ Resources:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VpcPublic
+      Tags:
+        - Key: Name
+          Value: !Sub cfn-lab-rtb-public-${AWS::StackName}
 
   RoutePublicDefault:
     Type: AWS::EC2::Route
