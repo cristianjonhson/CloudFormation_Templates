@@ -1,0 +1,87 @@
+# =============================================================
+# Template: 2.5-nat-private-subnet.yaml
+# Descripcion: Agrega una subnet privada con salida a Internet
+#   mediante NAT Gateway en una subnet publica existente.
+# Recursos creados:
+#   - Private Subnet
+#   - Elastic IP para NAT
+#   - NAT Gateway (en subnet publica)
+#   - Route Table privada
+#   - Ruta por defecto (0.0.0.0/0) hacia NAT
+#   - Asociacion subnet privada <-> route table privada
+# Outputs:
+#   - PrivateSubnetId
+#   - NatGatewayId
+#   - PrivateRouteTableId
+# =============================================================
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC donde se creara la subnet privada
+
+  PublicSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet publica existente donde se desplegara el NAT Gateway
+
+  PrivateSubnetCidr:
+    Type: String
+    Default: 10.0.2.0/24
+    Description: CIDR para la subnet privada
+
+  AvailabilityZone:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: us-east-1a
+    Description: Zona de disponibilidad para la subnet privada
+
+Resources:
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: !Ref PrivateSubnetCidr
+      AvailabilityZone: !Ref AvailabilityZone
+      MapPublicIpOnLaunch: false
+
+  NatEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEIP.AllocationId
+      SubnetId: !Ref PublicSubnetId
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcId
+
+  PrivateDefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+  PrivateSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet
+      RouteTableId: !Ref PrivateRouteTable
+
+Outputs:
+  PrivateSubnetId:
+    Description: ID de la subnet privada creada
+    Value: !Ref PrivateSubnet
+
+  NatGatewayId:
+    Description: ID del NAT Gateway
+    Value: !Ref NatGateway
+
+  PrivateRouteTableId:
+    Description: ID de la route table privada
+    Value: !Ref PrivateRouteTable
