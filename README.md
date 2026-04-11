@@ -135,6 +135,27 @@ aws configure
 
 Para templates con **parámetros** (ej. `02-ec2-security-group-elastic-ip.yaml` o `03-iam-role-vpc-s3-bucket.yaml`), puedes pasarlos en línea o mediante un archivo JSON de parámetros.
 
+### Validar Perfil AWS Activo
+
+Antes de ejecutar comandos de CloudFormation, valida qué perfil/credenciales está usando tu CLI:
+
+```bash
+# Ver perfil y origen de credenciales actualmente usados
+aws configure list
+
+# Ver el perfil activo por variable de entorno (si aplica)
+echo $AWS_PROFILE
+
+# Confirmar identidad real (cuenta/usuario/rol) con el contexto actual
+aws sts get-caller-identity
+
+# Probar CloudFormation con un perfil especifico
+aws cloudformation list-stacks --profile cristianjonhson
+
+# Fijar perfil para la sesion actual (opcional)
+export AWS_PROFILE=cristianjonhson
+```
+
 ---
 
 ## 🚀 Cómo Desplegar
