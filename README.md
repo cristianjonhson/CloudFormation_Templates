@@ -31,8 +31,11 @@ cloudformation/
 ├── 01-ec2-basic.yaml                          # EC2 básico (nivel inicial)
 ├── 1.5-public-vpc-subnet-igw-route.yaml       # Red publica base para instancias accesibles
 ├── 02-ec2-security-group-elastic-ip.yaml      # EC2 con Security Groups e IP elástica
+├── 2.5-nat-private-subnet.yaml                # NAT Gateway + subnet privada con salida controlada
 ├── 03-iam-role-vpc-s3-bucket.yaml             # IAM Role + VPC + S3 Bucket privado
+├── 3.5-ec2-ssm-no-ssh.yaml                    # EC2 gestionable por SSM sin abrir SSH publico
 ├── 04-iam-user-group-vpc-internet-gateway.yaml # IAM User/Group + S3 + VPC + Internet Gateway
+├── 4.5-alb-auto-scaling.yaml                  # ALB + Launch Template + Auto Scaling Group
 ├── 05-iam-admin-group-user-vpc-s3.yaml        # IAM Group de laboratorio + User + S3 + VPC
 ├── requirements.txt                           # Dependencias para validación local con Python
 ├── validate_templates.py                      # Validador YAML local compatible con tags de CloudFormation
@@ -62,15 +65,33 @@ EC2 con dos Security Groups y una Elastic IP asociada. El `SecurityGroupDescript
 - **Outputs:** IP elástica asignada
 - **Prerequisito recomendado:** usar primero `1.5-public-vpc-subnet-igw-route.yaml` para obtener una subnet pública funcional.
 
+### `2.5-nat-private-subnet.yaml`
+Agrega una subnet privada con salida a Internet a través de NAT Gateway.
+- **Recursos:** `EC2::Subnet`, `EC2::EIP`, `EC2::NatGateway`, `EC2::RouteTable`, `EC2::Route`
+- **Parámetros:** `VpcId`, `PublicSubnetId`, `PrivateSubnetCidr`, `AvailabilityZone`
+- **Outputs:** `PrivateSubnetId`, `NatGatewayId`, `PrivateRouteTableId`
+
 ### `03-iam-role-vpc-s3-bucket.yaml`
 Crea un rol IAM para EC2 con acceso completo a S3, una VPC y un bucket S3 privado.
 - **Recursos:** `IAM::Role`, `EC2::VPC`, `S3::Bucket`
 - **Parámetros:** `RoleName`, `BucketName` (opcionales)
 - **Nota:** si no se envían estos parámetros, CloudFormation genera los nombres automáticamente.
 
+### `3.5-ec2-ssm-no-ssh.yaml`
+Despliega una EC2 administrable por Session Manager sin abrir SSH público.
+- **Recursos:** `IAM::Role`, `IAM::InstanceProfile`, `EC2::SecurityGroup`, `EC2::Instance`
+- **Parámetros:** `VpcId`, `SubnetId`, `LatestAmiId`, `InstanceType`
+- **Outputs:** `InstanceId`, `InstanceProfileName`, `RoleArn`
+
 ### `04-iam-user-group-vpc-internet-gateway.yaml`
 Infraestructura completa con usuario y grupo IAM, bucket S3 privado, VPC e Internet Gateway. Incluye Outputs para todos los recursos.
 - **Recursos:** `IAM::User`, `IAM::Group`, `S3::Bucket`, `EC2::VPC`, `EC2::InternetGateway`
+
+### `4.5-alb-auto-scaling.yaml`
+Despliega una capa web escalable con ALB y Auto Scaling Group.
+- **Recursos:** `ELBv2::LoadBalancer`, `ELBv2::TargetGroup`, `ELBv2::Listener`, `EC2::LaunchTemplate`, `AutoScaling::AutoScalingGroup`
+- **Parámetros:** `VpcId`, `PublicSubnetA`, `PublicSubnetB`, `LatestAmiId`, `InstanceType`, `DesiredCapacity`, `MinSize`, `MaxSize`
+- **Outputs:** `LoadBalancerDNS`, `TargetGroupArn`
 
 ### `05-iam-admin-group-user-vpc-s3.yaml`
 Grupo IAM con política mínima de laboratorio, usuario IAM, membresía al grupo, bucket S3 y VPC.
@@ -212,6 +233,34 @@ aws cloudformation wait stack-create-complete --stack-name iam-vpc-s3-custom-sta
 aws cloudformation delete-stack --stack-name iam-vpc-s3-custom-stack
 aws cloudformation wait stack-delete-complete --stack-name iam-vpc-s3-custom-stack
 
+# Ejemplo template 2.5: NAT Gateway + subnet privada
+aws cloudformation create-stack \
+  --stack-name nat-private-subnet-test \
+  --template-body file://2.5-nat-private-subnet.yaml \
+  --parameters \
+    ParameterKey=VpcId,ParameterValue="vpc-xxxxxxxx" \
+    ParameterKey=PublicSubnetId,ParameterValue="subnet-xxxxxxxx"
+aws cloudformation wait stack-create-complete --stack-name nat-private-subnet-test
+
+# Eliminar stack del template 2.5
+aws cloudformation delete-stack --stack-name nat-private-subnet-test
+aws cloudformation wait stack-delete-complete --stack-name nat-private-subnet-test
+
+# Ejemplo template 3.5: EC2 administrable por SSM sin SSH
+aws cloudformation create-stack \
+  --stack-name ec2-ssm-no-ssh-test \
+  --template-body file://3.5-ec2-ssm-no-ssh.yaml \
+  --parameters \
+    ParameterKey=VpcId,ParameterValue="vpc-xxxxxxxx" \
+    ParameterKey=SubnetId,ParameterValue="subnet-xxxxxxxx" \
+    ParameterKey=InstanceType,ParameterValue="t2.micro" \
+  --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation wait stack-create-complete --stack-name ec2-ssm-no-ssh-test
+
+# Eliminar stack del template 3.5
+aws cloudformation delete-stack --stack-name ec2-ssm-no-ssh-test
+aws cloudformation wait stack-delete-complete --stack-name ec2-ssm-no-ssh-test
+
 # Ejemplo template 04: IAM User + IAM Group + S3 + VPC + Internet Gateway
 aws cloudformation create-stack \
   --stack-name iam-user-group-vpc-igw-test \
@@ -225,6 +274,20 @@ aws cloudformation delete-stack --stack-name iam-user-group-vpc-igw-test
 
 # Esperar a que termine el borrado del stack
 aws cloudformation wait stack-delete-complete --stack-name iam-user-group-vpc-igw-test
+
+# Ejemplo template 4.5: ALB + Auto Scaling
+aws cloudformation create-stack \
+  --stack-name alb-asg-test \
+  --template-body file://4.5-alb-auto-scaling.yaml \
+  --parameters \
+    ParameterKey=VpcId,ParameterValue="vpc-xxxxxxxx" \
+    ParameterKey=PublicSubnetA,ParameterValue="subnet-aaaaaaa" \
+    ParameterKey=PublicSubnetB,ParameterValue="subnet-bbbbbbb"
+aws cloudformation wait stack-create-complete --stack-name alb-asg-test
+
+# Eliminar stack del template 4.5
+aws cloudformation delete-stack --stack-name alb-asg-test
+aws cloudformation wait stack-delete-complete --stack-name alb-asg-test
 
 # Ejemplo template 05: IAM Group con permisos de laboratorio + User + S3 + VPC
 aws cloudformation create-stack \
