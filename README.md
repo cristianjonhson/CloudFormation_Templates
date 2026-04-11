@@ -169,6 +169,10 @@ aws cloudformation create-stack \
   --template-body file://1.5-public-vpc-subnet-igw-route.yaml
 aws cloudformation wait stack-create-complete --stack-name public-network-base
 
+# Eliminar stack del template 1.5
+aws cloudformation delete-stack --stack-name public-network-base
+aws cloudformation wait stack-delete-complete --stack-name public-network-base
+
 # Consulta los outputs para obtener VpcId y PublicSubnetId para la plantilla 02
 aws cloudformation describe-stacks \
   --stack-name public-network-base \
