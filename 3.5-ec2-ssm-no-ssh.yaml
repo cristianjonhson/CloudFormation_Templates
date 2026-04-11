@@ -38,7 +38,7 @@ Parameters:
     Description: Tipo de instancia EC2
 
 Resources:
-  SsmInstanceRole:
+  IamRoleSsmInstance:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -51,13 +51,13 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
 
-  SsmInstanceProfile:
+  IamInstanceProfileSsm:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Roles:
-        - !Ref SsmInstanceRole
+        - !Ref IamRoleSsmInstance
 
-  NoSshSecurityGroup:
+  SecurityGroupNoSsh:
     Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId: !Ref VpcId
@@ -66,25 +66,25 @@ Resources:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
 
-  SsmManagedInstance:
+  Ec2InstanceSsmManaged:
     Type: AWS::EC2::Instance
     Properties:
       SubnetId: !Ref SubnetId
       ImageId: !Ref LatestAmiId
       InstanceType: !Ref InstanceType
-      IamInstanceProfile: !Ref SsmInstanceProfile
+      IamInstanceProfile: !Ref IamInstanceProfileSsm
       SecurityGroupIds:
-        - !Ref NoSshSecurityGroup
+        - !Ref SecurityGroupNoSsh
 
 Outputs:
   InstanceId:
     Description: ID de la instancia EC2 administrable por SSM
-    Value: !Ref SsmManagedInstance
+    Value: !Ref Ec2InstanceSsmManaged
 
   InstanceProfileName:
     Description: Nombre del instance profile asociado
-    Value: !Ref SsmInstanceProfile
+    Value: !Ref IamInstanceProfileSsm
 
   RoleArn:
     Description: ARN del rol IAM usado por la instancia
-    Value: !GetAtt SsmInstanceRole.Arn
+    Value: !GetAtt IamRoleSsmInstance.Arn

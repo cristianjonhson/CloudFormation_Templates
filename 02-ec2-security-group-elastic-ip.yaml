@@ -48,33 +48,33 @@ Resources:
 
   # Instancia EC2 que referencia ambos Security Groups.
   # !Ref resuelve el nombre logico del recurso al ID real en AWS.
-  MyInstance:
+  Ec2Instance:
     Type: AWS::EC2::Instance
     Properties:
       SubnetId: !Ref SubnetId
       ImageId: !Ref LatestAmiId # AMI dinamica obtenida del parametro SSM
       InstanceType: t2.micro
       SecurityGroupIds:
-        - !Ref SSHSecurityGroup    # Permite SSH desde cualquier IP
-        - !Ref ServerSecurityGroup # Permite HTTP y SSH restringido
+        - !Ref SshSecurityGroup # Permite SSH desde cualquier IP
+        - !Ref WebSecurityGroup # Permite HTTP y SSH restringido
 
   # Elastic IP: IP publica estatica que no cambia al reiniciar la instancia.
   # Sin EIP, la IP publica de EC2 cambia cada vez que se para y se inicia.
-  MyEIP:
+  ElasticIp:
     Type: AWS::EC2::EIP
     Properties:
       Domain: vpc
 
   # Asociacion explicita de la Elastic IP a la instancia dentro de la VPC.
-  MyEIPAssociation:
+  ElasticIpAssociation:
     Type: AWS::EC2::EIPAssociation
     Properties:
-      AllocationId: !GetAtt MyEIP.AllocationId
-      InstanceId: !Ref MyInstance
+      AllocationId: !GetAtt ElasticIp.AllocationId
+      InstanceId: !Ref Ec2Instance
 
   # Security Group de SSH: permite acceso por SSH (puerto 22) desde Internet.
   # El acceso queda restringido al CIDR definido por parametro.
-  SSHSecurityGroup:
+  SshSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId: !Ref VpcId
@@ -89,7 +89,7 @@ Resources:
   #   - Puerto 80 (HTTP) abierto al mundo para servir trafico web.
   #   - Puerto 22 (SSH) restringido al CIDR administrativo.
   # GroupDescription se toma del parametro SecurityGroupDescription.
-  ServerSecurityGroup:
+  WebSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId: !Ref VpcId
@@ -109,4 +109,4 @@ Resources:
 Outputs:
   ElasticIP:
     Description: Valor de la IP elastica
-    Value: !Ref MyEIP # Ref al recurso EIP devuelve la IP publica asignada a la instancia
+    Value: !Ref ElasticIp # Ref al recurso EIP devuelve la IP publica asignada a la instancia

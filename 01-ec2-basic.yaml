@@ -27,7 +27,7 @@ Resources:
   # AvailabilityZone: zona de disponibilidad donde se lanzara la instancia.
   # ImageId: AMI de Amazon Linux en us-east-1 (cambiar si se usa otra region).
   # InstanceType: t2.micro es elegible para la capa gratuita de AWS.
-  MyInstance:
+  Ec2Instance:
     Type: AWS::EC2::Instance
     Properties:
       SubnetId: !Ref SubnetId

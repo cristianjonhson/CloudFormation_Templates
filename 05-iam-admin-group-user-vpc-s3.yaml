@@ -36,8 +36,8 @@ Resources:
                   - s3:PutObject
                   - s3:DeleteObject
                 Resource:
-                  - !Sub arn:aws:s3:::${S3Bucket}
-                  - !Sub arn:aws:s3:::${S3Bucket}/*
+                  - !Sub arn:aws:s3:::${S3BucketLab}
+                  - !Sub arn:aws:s3:::${S3BucketLab}/*
               - Sid: Ec2ReadOnly
                 Effect: Allow
                 Action:
@@ -67,13 +67,13 @@ Resources:
   # Bucket S3 sin propiedades adicionales: CloudFormation generara
   # un nombre unico automaticamente. Sin AccessControl explicitico,
   # el bucket es privado por defecto.
-  S3Bucket:
+  S3BucketLab:
     Type: AWS::S3::Bucket
 
   # VPC base con rango de IPs privadas 10.0.0.0/16.
   # Es el contenedor de red sobre el que se construiria
   # la infraestructura de subredes, rutas y gateways.
-  VPC:
+  VpcMain:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.0.0.0/16

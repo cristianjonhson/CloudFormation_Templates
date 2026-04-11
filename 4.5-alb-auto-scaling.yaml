@@ -86,7 +86,7 @@ Resources:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
 
-  WebTargetGroup:
+  AlbTargetGroupWeb:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       VpcId: !Ref VpcId
@@ -96,7 +96,7 @@ Resources:
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
 
-  ApplicationLoadBalancer:
+  AlbPublic:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Name: lab-alb
@@ -108,17 +108,17 @@ Resources:
       SecurityGroups:
         - !Ref AlbSecurityGroup
 
-  HttpListener:
+  AlbHttpListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
-      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      LoadBalancerArn: !Ref AlbPublic
       Port: 80
       Protocol: HTTP
       DefaultActions:
         - Type: forward
-          TargetGroupArn: !Ref WebTargetGroup
+          TargetGroupArn: !Ref AlbTargetGroupWeb
 
-  WebLaunchTemplate:
+  Ec2LaunchTemplateWeb:
     Type: AWS::EC2::LaunchTemplate
     Properties:
       LaunchTemplateData:
@@ -135,7 +135,7 @@ Resources:
             systemctl start httpd
             echo "<h1>Hola desde Auto Scaling Group</h1>" > /var/www/html/index.html
 
-  WebAutoScalingGroup:
+  AutoScalingGroupWeb:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       VPCZoneIdentifier:
@@ -145,16 +145,16 @@ Resources:
       MaxSize: !Ref MaxSize
       DesiredCapacity: !Ref DesiredCapacity
       TargetGroupARNs:
-        - !Ref WebTargetGroup
+        - !Ref AlbTargetGroupWeb
       LaunchTemplate:
-        LaunchTemplateId: !Ref WebLaunchTemplate
-        Version: !GetAtt WebLaunchTemplate.LatestVersionNumber
+        LaunchTemplateId: !Ref Ec2LaunchTemplateWeb
+        Version: !GetAtt Ec2LaunchTemplateWeb.LatestVersionNumber
 
 Outputs:
   LoadBalancerDNS:
     Description: DNS publico del Application Load Balancer
-    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Value: !GetAtt AlbPublic.DNSName
 
   TargetGroupArn:
     Description: ARN del target group del ALB
-    Value: !Ref WebTargetGroup
+    Value: !Ref AlbTargetGroupWeb

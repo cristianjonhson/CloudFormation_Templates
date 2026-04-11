@@ -39,7 +39,7 @@ Resources:
   #   AmazonS3FullAccess que da acceso total a S3.
   # RoleName: se asigna solo si el parametro no esta vacio, sino se omite para que CloudFormation genere un nombre unico.
   # Es buena practica no hardcodear nombres de recursos a menos que sea necesario, para evitar conflictos y facilitar despliegues repetidos.
-  MyIAMRole:
+  IamRoleEc2S3:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !If [UseCustomRoleName, !Ref RoleName, !Ref 'AWS::NoValue']
@@ -56,7 +56,7 @@ Resources:
   # VPC: red virtual privada que aisla los recursos de AWS.
   # CidrBlock 10.0.0.0/16 proporciona hasta 65.536 IPs privadas.
   # EnableDnsSupport/Hostnames: permite resolver nombres DNS dentro de la VPC.
-  MyVPC:
+  VpcMain:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.0.0.0/16
@@ -66,7 +66,7 @@ Resources:
   # Bucket S3 privado para evitar exposicion publica no intencional.
   # AccessControl: Private significa que solo el propietario tiene acceso.
   # El nombre del bucket se asigna solo si el parametro no esta vacio, sino se omite para que CloudFormation genere un nombre unico.
-  MyS3Bucket:
+  S3BucketPrivate:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !If [UseCustomBucketName, !Ref BucketName, !Ref 'AWS::NoValue']

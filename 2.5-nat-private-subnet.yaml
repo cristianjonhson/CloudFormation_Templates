@@ -36,7 +36,7 @@ Parameters:
     Description: Zona de disponibilidad para la subnet privada
 
 Resources:
-  PrivateSubnet:
+  SubnetPrivate:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VpcId
@@ -44,44 +44,44 @@ Resources:
       AvailabilityZone: !Ref AvailabilityZone
       MapPublicIpOnLaunch: false
 
-  NatEIP:
+  NatElasticIp:
     Type: AWS::EC2::EIP
     Properties:
       Domain: vpc
 
-  NatGateway:
+  NatGatewayPrivate:
     Type: AWS::EC2::NatGateway
     Properties:
-      AllocationId: !GetAtt NatEIP.AllocationId
+      AllocationId: !GetAtt NatElasticIp.AllocationId
       SubnetId: !Ref PublicSubnetId
 
-  PrivateRouteTable:
+  RouteTablePrivate:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VpcId
 
-  PrivateDefaultRoute:
+  RoutePrivateDefault:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref PrivateRouteTable
+      RouteTableId: !Ref RouteTablePrivate
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGateway
+      NatGatewayId: !Ref NatGatewayPrivate
 
-  PrivateSubnetRouteTableAssociation:
+  SubnetPrivateRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PrivateSubnet
-      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref SubnetPrivate
+      RouteTableId: !Ref RouteTablePrivate
 
 Outputs:
   PrivateSubnetId:
     Description: ID de la subnet privada creada
-    Value: !Ref PrivateSubnet
+    Value: !Ref SubnetPrivate
 
   NatGatewayId:
     Description: ID del NAT Gateway
-    Value: !Ref NatGateway
+    Value: !Ref NatGatewayPrivate
 
   PrivateRouteTableId:
     Description: ID de la route table privada
-    Value: !Ref PrivateRouteTable
+    Value: !Ref RouteTablePrivate

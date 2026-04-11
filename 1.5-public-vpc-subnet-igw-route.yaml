@@ -35,62 +35,62 @@ Parameters:
     Default: us-east-1a
 
 Resources:
-  PublicVPC:
+  VpcPublic:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: !Ref VpcCidr
       EnableDnsSupport: true
       EnableDnsHostnames: true
 
-  PublicSubnet:
+  SubnetPublic:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref PublicVPC
+      VpcId: !Ref VpcPublic
       CidrBlock: !Ref PublicSubnetCidr
       AvailabilityZone: !Ref AvailabilityZone
       MapPublicIpOnLaunch: true
 
-  InternetGateway:
+  InternetGatewayPublic:
     Type: AWS::EC2::InternetGateway
 
-  VPCGatewayAttachment:
+  VpcInternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
-      VpcId: !Ref PublicVPC
-      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VpcPublic
+      InternetGatewayId: !Ref InternetGatewayPublic
 
-  PublicRouteTable:
+  RouteTablePublic:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId: !Ref PublicVPC
+      VpcId: !Ref VpcPublic
 
-  DefaultInternetRoute:
+  RoutePublicDefault:
     Type: AWS::EC2::Route
-    DependsOn: VPCGatewayAttachment
+    DependsOn: VpcInternetGatewayAttachment
     Properties:
-      RouteTableId: !Ref PublicRouteTable
+      RouteTableId: !Ref RouteTablePublic
       DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGateway
+      GatewayId: !Ref InternetGatewayPublic
 
-  PublicSubnetRouteTableAssociation:
+  SubnetPublicRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PublicSubnet
-      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref SubnetPublic
+      RouteTableId: !Ref RouteTablePublic
 
 Outputs:
   VpcId:
     Description: ID de la VPC creada
-    Value: !Ref PublicVPC
+    Value: !Ref VpcPublic
 
   PublicSubnetId:
     Description: ID de la subnet publica creada
-    Value: !Ref PublicSubnet
+    Value: !Ref SubnetPublic
 
   InternetGatewayId:
     Description: ID de la Internet Gateway creada
-    Value: !Ref InternetGateway
+    Value: !Ref InternetGatewayPublic
 
   RouteTableId:
     Description: ID de la route table publica
-    Value: !Ref PublicRouteTable
+    Value: !Ref RouteTablePublic
