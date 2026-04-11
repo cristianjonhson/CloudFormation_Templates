@@ -169,12 +169,51 @@ aws cloudformation create-stack \
   --template-body file://<nombre-del-archivo>.yaml \
   --capabilities CAPABILITY_NAMED_IAM
 
+# Prerrequisito de red (recomendado): crear VPC + subnet publica con el template 1.5
+aws cloudformation create-stack \
+  --stack-name public-network-base \
+  --template-body file://1.5-public-vpc-subnet-igw-route.yaml \
+  --profile cristianjonhson \
+  --no-cli-pager
+aws cloudformation wait stack-create-complete \
+  --stack-name public-network-base \
+  --profile cristianjonhson
+
+# Obtener VpcId y SubnetId para reutilizarlos en 01, 02 y 3.5
+VPC_ID=$(aws cloudformation describe-stacks \
+  --stack-name public-network-base \
+  --profile cristianjonhson \
+  --query "Stacks[0].Outputs[?OutputKey=='VpcId'].OutputValue" \
+  --output text)
+
+SUBNET_ID=$(aws cloudformation describe-stacks \
+  --stack-name public-network-base \
+  --profile cristianjonhson \
+  --query "Stacks[0].Outputs[?OutputKey=='PublicSubnetId'].OutputValue" \
+  --output text)
+
+echo "VPC_ID=$VPC_ID"
+echo "SUBNET_ID=$SUBNET_ID"
+
+# Alternativa manual (sin template 1.5): crear solo una subnet dentro de una VPC existente
+# Requiere reemplazar vpc-xxxxxxxx por un VPC real.
+aws ec2 create-subnet \
+  --vpc-id vpc-xxxxxxxx \
+  --cidr-block 10.0.10.0/24 \
+  --availability-zone us-east-1a \
+  --query 'Subnet.SubnetId' \
+  --output text \
+  --profile cristianjonhson \
+  --no-cli-pager
+
 # Ejemplo template 01: EC2 básica
 aws cloudformation create-stack \
   --stack-name ec2-basic-test \
   --template-body file://01-ec2-basic.yaml \
-  --parameters ParameterKey=SubnetId,ParameterValue="subnet-xxxxxxxx"
-aws cloudformation wait stack-create-complete --stack-name ec2-basic-test
+  --parameters ParameterKey=SubnetId,ParameterValue="$SUBNET_ID" \
+  --profile cristianjonhson \
+  --no-cli-pager
+aws cloudformation wait stack-create-complete --stack-name ec2-basic-test --profile cristianjonhson
 
 # Eliminar stack del template 01
 aws cloudformation delete-stack --stack-name ec2-basic-test
